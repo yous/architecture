@@ -1,5 +1,6 @@
 import sys
 import getopt
+import os
 import re
 
 def bin_str(n, bit):
@@ -165,7 +166,7 @@ class Assembler:
         else:
             self.parse(f.readlines())
             self.resolve_label()
-            print self.generate_output()
+            self.save('%s.o' % os.path.splitext(filename)[0])
 
     def parse(self, lines):
         mode = None
@@ -227,6 +228,16 @@ class Assembler:
                 label = instruction[2]
                 address = self.labels[label]
                 self.instructions[i][2] = address
+
+    def save(self, filename):
+        try:
+            f = open(filename, 'w')
+        except IOError, e:
+            print 'IO error(%d): %s' % (e.errno, e.strerror)
+            sys.exit(2)
+        else:
+            f.write(self.generate_output())
+            f.close()
 
     def generate_output(self):
         text_section = ''.join(map(
