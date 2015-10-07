@@ -147,14 +147,97 @@ class Instruction:
         instr = self.tokens[0]
         return str(self.INSTRUCTION_MAP[instr](self.tokens))
 
-def parse(filename):
-    try:
-        f = open(filename, 'r')
-        lines = f.readlines()
-    except IOError, e:
-        print 'IO error(%d): %s' % (e.errno, e.strerror)
-    else:
-        f.close()
+class Assembler:
+    TEXT_ADDRESS = 0x400000
+    DATA_ADDRESS = 0x10000000
+
+    def __init__(self):
+        self.labels = {}
+        self.instructions = []
+        self.data = []
+
+    def assemble(self, filename):
+        try:
+            f = open(filename, 'r')
+        except IOError, e:
+            print 'IO error(%d): %s' % (e.errno, e.strerror)
+            sys.exit(2)
+        else:
+            self.parse(f.readlines())
+            self.resolve_label()
+            print self.generate_output()
+
+    def parse(self, lines):
+        mode = None
+        address = None
+        for line in lines:
+            tokens = line.replace(',', '').split()
+            for i in range(len(tokens)):
+                token = tokens[i]
+                if token.endswith(':'):
+                    self.labels[token[:-1]] = address
+                elif token == '.data':
+                    mode = 'data'
+                    address = self.DATA_ADDRESS
+                elif token == '.text':
+                    mode = 'text'
+                    address = self.TEXT_ADDRESS
+                elif mode == 'data':
+                    value = tokens[i + 1]
+                    if value.startswith('0x') or value.startswith('-0x'):
+                        value = int(value, 16)
+                    else:
+                        value = int(value)
+                    self.data.append(value)
+                    address += 4
+                    break
+                elif mode == 'text':
+                    if token == 'la':
+                        label = tokens[i + 2]
+                        label_address = self.labels[label]
+                        if label_address & 0xFFFF == 0:
+                            self.instructions.append([
+                                address,
+                                'lui', tokens[i + 1], label_address >> 16])
+                        else:
+                            self.instructions.append([
+                                address,
+                                'lui', tokens[i + 1], label_address >> 16])
+                            address += 4
+                            self.instructions.append([
+                                address,
+                                'ori', tokens[i + 1], tokens[i + 1],
+                                label_address & 0xFFFF])
+                    else:
+                        self.instructions.append([address] + tokens[i:])
+                    address += 4
+                    break
+
+    def resolve_label(self):
+        instructions = self.instructions
+        for i in range(len(instructions)):
+            instruction = instructions[i]
+            address = instruction[0]
+            instr = instruction[1]
+            if instr == 'beq' or instr == 'bne':
+                label = instruction[4]
+                offset = self.labels[label] - address - 4
+                self.instructions[i][4] = offset
+            elif instr == 'j' or instr == 'jal':
+                label = instruction[2]
+                address = self.labels[label]
+                self.instructions[i][2] = address
+
+    def generate_output(self):
+        text_section = ''.join(map(
+            lambda tokens: str(Instruction(tokens[1:])),
+            self.instructions))
+        data_section = ''.join(map(
+            lambda x: bin_str(x, 32),
+            self.data))
+        return (bin_str(len(text_section) / 8, 32) +
+                bin_str(len(data_section) / 8, 32) +
+                text_section + data_section)
 
 def usage():
     print 'usage: %s <assembly file>' % sys.argv[0]
@@ -174,7 +257,7 @@ def main(argv):
         usage()
         sys.exit(2)
 
-    parse(args[0])
+    Assembler().assemble(args[0])
 
 if __name__ == '__main__':
     main(sys.argv[1:])
