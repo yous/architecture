@@ -1,3 +1,3 @@
 # Architecture
 
-Computer Organization (CS311), KAIST
+Computer Organization (CS311) by Jaehyuk Huh, KAIST
