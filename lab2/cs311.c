@@ -31,37 +31,37 @@ void load_program(char *program_filename) {
     /* Open program file. */
     prog = fopen(program_filename, "r");
     if (prog == NULL) {
-	printf("Error: Can't open program file %s\n", program_filename);
-	exit(-1);
+        printf("Error: Can't open program file %s\n", program_filename);
+        exit(-1);
     }
 
     //read 32bits + '\0' = 33
     while (fgets(buffer,33,prog) != NULL) {
-	if(flag == 0) {
-	    //check text segment size
-	    text_size = fromBinary(buffer);
-	    NUM_INST = text_size/4;
-	    //initial memory allocation of text segment
-	    INST_INFO = malloc(sizeof(instruction)*(text_size/4));
-	    init_inst_info(text_size/4);
-	}
-	else if(flag == 1) {
-	    //check data segment size
-	    data_size = fromBinary(buffer);
-	}
-	else{
-	    if(ii < text_size)
-		INST_INFO[text_index++] = parsing_instr(buffer, ii);
-	    else if(ii < text_size + data_size)
-		parsing_data(buffer, ii-text_size);
-	    else{
-		//Do not enter this case
-		//assert(0);
-		//However, there is a newline in the input file
-	    }
-	    ii += 4;
-	}
-	flag++;
+        if(flag == 0) {
+            //check text segment size
+            text_size = fromBinary(buffer);
+            NUM_INST = text_size/4;
+            //initial memory allocation of text segment
+            INST_INFO = malloc(sizeof(instruction)*(text_size/4));
+            init_inst_info(text_size/4);
+        }
+        else if(flag == 1) {
+            //check data segment size
+            data_size = fromBinary(buffer);
+        }
+        else{
+            if(ii < text_size)
+                INST_INFO[text_index++] = parsing_instr(buffer, ii);
+            else if(ii < text_size + data_size)
+                parsing_data(buffer, ii-text_size);
+            else{
+                //Do not enter this case
+                //assert(0);
+                //However, there is a newline in the input file
+            }
+            ii += 4;
+        }
+        flag++;
     }
     CURRENT_STATE.PC = MEM_TEXT_START;
 }
@@ -104,52 +104,52 @@ int main(int argc, char *argv[]) {
 
     /* Error Checking */
     if (argc < 2) {
-	printf("Error: usage: %s [-m addr1:addr2] [-d] [-n num_instr] inputBinary\n", argv[0]);
-	exit(1);
+        printf("Error: usage: %s [-m addr1:addr2] [-d] [-n num_instr] inputBinary\n", argv[0]);
+        exit(1);
     }
 
     initialize(argv[argc-1]);
 
     /* Main argument parsing */
     while(count != argc-1) {
-	if(strcmp(argv[count], "-m") == 0) {
-	    tokens = str_split(argv[++count],':');
+        if(strcmp(argv[count], "-m") == 0) {
+            tokens = str_split(argv[++count],':');
 
-	    addr1 = (int)strtol(*(tokens), NULL, 16);
-	    addr2 = (int)strtol(*(tokens+1), NULL, 16);
-	    mem_dump_set = 1;
-	}
-	else if(strcmp(argv[count], "-d") == 0)
-	    debug_set = 1;
-	else if(strcmp(argv[count], "-n") == 0) {
-	    num_inst = (int)strtol(argv[++count], NULL, 10);
-	    num_inst_set = 1;
-	}
-	else {
-	    printf("Error: usage: %s [-m addr1:addr2] [-d] [-n num_instr] inputBinary\n", argv[0]);
-	    exit(1);
-    	}
-	count++;
+            addr1 = (int)strtol(*(tokens), NULL, 16);
+            addr2 = (int)strtol(*(tokens+1), NULL, 16);
+            mem_dump_set = 1;
+        }
+        else if(strcmp(argv[count], "-d") == 0)
+            debug_set = 1;
+        else if(strcmp(argv[count], "-n") == 0) {
+            num_inst = (int)strtol(argv[++count], NULL, 10);
+            num_inst_set = 1;
+        }
+        else {
+            printf("Error: usage: %s [-m addr1:addr2] [-d] [-n num_instr] inputBinary\n", argv[0]);
+            exit(1);
+        }
+        count++;
     }
 
     /* Execute */
     if(num_inst_set) i = num_inst;
 
     if(debug_set) {
-    	printf("Simulating for %d cycles...\n\n", i);
+        printf("Simulating for %d cycles...\n\n", i);
 
-	for(; i > 0; i--) {
-	    cycle();
-	    rdump();
+        for(; i > 0; i--) {
+            cycle();
+            rdump();
 
-	    if(mem_dump_set) mdump(addr1, addr2);
-	}
+            if(mem_dump_set) mdump(addr1, addr2);
+        }
     }
     else{
-	run(i);
-	rdump();
+        run(i);
+        rdump();
 
-	if(mem_dump_set) mdump(addr1, addr2);
+        if(mem_dump_set) mdump(addr1, addr2);
     }
     return 0;
 }

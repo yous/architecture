@@ -18,7 +18,7 @@ extern int text_size;
 extern int data_size;
 
 /* functions */
-instruction	parsing_instr(const char *buffer, const int index);
-void		parsing_data(const char *buffer, const int index);
+instruction     parsing_instr(const char *buffer, const int index);
+void            parsing_data(const char *buffer, const int index);
 
 #endif

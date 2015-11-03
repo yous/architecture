@@ -14,6 +14,6 @@
 
 #include "util.h"
 /* functions */
-void		process_instruction();
+void            process_instruction();
 
 #endif
