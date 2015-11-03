@@ -177,7 +177,8 @@ void run(int num_cycles) {
     printf("Simulating for %d cycles...\n\n", num_cycles);
     for (i = 0; i < num_cycles; i++) {
         if (RUN_BIT == FALSE) {
-            printf("Simulator halted\n\n");
+            printf("Simulator halted\n");
+            printf("Executed cycle: %d\n\n", INSTRUCTION_COUNT);
             break;
         }
         cycle();
