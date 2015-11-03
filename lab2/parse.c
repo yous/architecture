@@ -31,6 +31,7 @@ instruction parsing_instr(const char *buffer, const int index) {
 
     mem_write_32(MEM_TEXT_START + index, inst_binary);
 
+    instr.value = inst_binary;
     instr.opcode = inst_binary >> 26;
     switch (instr.opcode) {
         // R-type

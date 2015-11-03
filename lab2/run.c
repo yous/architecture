@@ -89,6 +89,8 @@ void process_instruction() {
                     CURRENT_STATE.REGS[rd] =
                         CURRENT_STATE.REGS[rs] - CURRENT_STATE.REGS[rt];
                     break;
+                default:
+                    printf("Unknown instruction type: %u\n", instr.value);
             }
             break;
         // J-type
@@ -157,6 +159,8 @@ void process_instruction() {
                             CURRENT_STATE.REGS[rs] + (int32_t) imm,
                             CURRENT_STATE.REGS[rt]);
                     break;
+                default:
+                    printf("Unknown instruction type: %u\n", instr.value);
             }
             break;
     }
