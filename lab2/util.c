@@ -142,6 +142,9 @@ void mem_write_32(uint32_t address, uint32_t value) {
             return;
         }
     }
+
+    printf("Memory Write Error: Exceed memory boundary 0x%x\n", address);
+    exit(1);
 }
 
 /***************************************************************/
