@@ -70,7 +70,7 @@ char **str_split(char *a_str, const char a_delim) {
     result = malloc(sizeof(char *) * count);
 
     if (result) {
-        size_t idx  = 0;
+        size_t idx = 0;
         char *token = strtok(a_str, delim);
 
         while (token) {

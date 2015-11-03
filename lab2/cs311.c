@@ -26,7 +26,6 @@ void load_program(char *program_filename) {
     /* To notifying data & text segment size */
     int flag = 0;
     int text_index = 0;
-    int data_index = 0;
 
     /* Open program file. */
     prog = fopen(program_filename, "r");
@@ -73,8 +72,6 @@ void load_program(char *program_filename) {
 /*                                                          */
 /************************************************************/
 void initialize(char *program_filename) {
-    int i;
-
     init_memory();
     load_program(program_filename);
     RUN_BIT = TRUE;
