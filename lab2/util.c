@@ -150,7 +150,7 @@ void mem_write_32(uint32_t address, uint32_t value) {
 /* Purpose   : Execute a cycle                                 */
 /*                                                             */
 /***************************************************************/
-void cycle() {                                                
+void cycle() {
     process_instruction();
     INSTRUCTION_COUNT++;
 }
@@ -199,7 +199,7 @@ void go() {
     printf("Simulator halted\n\n");
 }
 
-/***************************************************************/ 
+/***************************************************************/
 /*                                                             */
 /* Procedure : mdump                                           */
 /*                                                             */
@@ -207,7 +207,7 @@ void go() {
 /*             output file.                                    */
 /*                                                             */
 /***************************************************************/
-void mdump(int start, int stop) {          
+void mdump(int start, int stop) {
     int address;
 
     printf("Memory content [0x%08x..0x%08x] :\n", start, stop);
@@ -221,12 +221,12 @@ void mdump(int start, int stop) {
 /*                                                             */
 /* Procedure : rdump                                           */
 /*                                                             */
-/* Purpose   : Dump current register and bus values to the     */   
+/* Purpose   : Dump current register and bus values to the     */
 /*             output file.                                    */
 /*                                                             */
 /***************************************************************/
-void rdump() {                               
-    int k; 
+void rdump() {
+    int k;
 
     printf("Current register values :\n");
     printf("-------------------------------------\n");
@@ -244,7 +244,7 @@ void rdump() {
 /* Purpose   : Allocate and zero memory                        */
 /*                                                             */
 /***************************************************************/
-void init_memory() {                                           
+void init_memory() {
     int i;
     for (i = 0; i < MEM_NREGIONS; i++) {
 	MEM_REGIONS[i].mem = malloc(MEM_REGIONS[i].size);
@@ -261,7 +261,7 @@ void init_memory() {
 /***************************************************************/
 void init_inst_info() {
     int i;
-    
+
     for(i = 0; i < NUM_INST; i++) {
 	INST_INFO[i].value = 0;
 	INST_INFO[i].opcode = 0;

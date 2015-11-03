@@ -35,7 +35,7 @@ typedef struct CPU_State_Struct {
 /* To store instruction information */
 typedef struct inst_s {
     short opcode;
-    
+
     /*R-type*/
     short func_code;
 

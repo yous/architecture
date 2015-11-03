@@ -18,7 +18,7 @@
 /* Purpose   : Load program and service routines into mem.    */
 /*                                                            */
 /**************************************************************/
-void load_program(char *program_filename) {                   
+void load_program(char *program_filename) {
     FILE *prog;
     int ii = 0;
     char buffer[33];
@@ -70,11 +70,11 @@ void load_program(char *program_filename) {
 /*                                                          */
 /* Procedure : initialize                                   */
 /*                                                          */
-/* Purpose   : Load machine language program                */ 
+/* Purpose   : Load machine language program                */
 /*             and set up initial state of the machine.     */
 /*                                                          */
 /************************************************************/
-void initialize(char *program_filename) { 
+void initialize(char *program_filename) {
     int i;
 
     init_memory();
@@ -87,13 +87,13 @@ void initialize(char *program_filename) {
 /* Procedure : main                                            */
 /*                                                             */
 /***************************************************************/
-int main(int argc, char *argv[]) {                              
+int main(int argc, char *argv[]) {
     char** tokens;
     int count = 1;
     int addr1 = 0;
     int addr2 = 0;
     int num_inst = 0;
-    
+
     /* Default option: run 100 cycle */
     int i = 100;
 
