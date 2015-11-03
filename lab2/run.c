@@ -19,23 +19,15 @@
 /*                                                             */
 /***************************************************************/
 void process_instruction() {
-    int instr_index = (CURRENT_STATE.PC - MEM_TEXT_START) / 4;
-    instruction instr;
+    instruction instr = INST_INFO[(CURRENT_STATE.PC - MEM_TEXT_START) / 4];
     unsigned char rs;
     unsigned char rt;
     unsigned char rd;
     unsigned char shamt;
     short imm;
     uint32_t target;
+    int instr_index;
 
-    if (instr_index >= NUM_INST) {
-        RUN_BIT = FALSE;
-        INSTRUCTION_COUNT--;
-        printf("Run bit unset pc: %x\n", CURRENT_STATE.PC);
-        return;
-    }
-
-    instr = INST_INFO[instr_index];
     CURRENT_STATE.PC += 4;
     switch (instr.opcode) {
         // R-type
@@ -163,5 +155,11 @@ void process_instruction() {
                     printf("Unknown instruction type: %u\n", instr.value);
             }
             break;
+    }
+
+    instr_index = (CURRENT_STATE.PC - MEM_TEXT_START) / 4;
+    if (instr_index >= NUM_INST) {
+        RUN_BIT = FALSE;
+        printf("Run bit unset pc: %x\n", CURRENT_STATE.PC);
     }
 }

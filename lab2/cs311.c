@@ -134,6 +134,10 @@ int main(int argc, char *argv[]) {
         printf("Simulating for %d cycles...\n\n", i);
 
         for(; i > 0; i--) {
+            if (RUN_BIT == FALSE) {
+                printf("Simulator halted\n\n");
+                break;
+            }
             cycle();
             rdump();
 
