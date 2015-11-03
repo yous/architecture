@@ -11,9 +11,9 @@
 #define _RUN_H_
 
 #include <stdio.h>
-
 #include "util.h"
+
 /* functions */
-void            process_instruction();
+void process_instruction();
 
 #endif

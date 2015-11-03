@@ -8,6 +8,7 @@
 /***************************************************************/
 
 #include "util.h"
+#include "run.h"
 
 /***************************************************************/
 /* Main memory.                                                */
@@ -19,7 +20,7 @@ mem_region_t MEM_REGIONS[] = {
     { MEM_DATA_START, MEM_DATA_SIZE, NULL },
 };
 
-#define MEM_NREGIONS (sizeof(MEM_REGIONS)/sizeof(mem_region_t))
+#define MEM_NREGIONS (sizeof(MEM_REGIONS) / sizeof(mem_region_t))
 
 /***************************************************************/
 /* CPU State info.                                             */
@@ -41,17 +42,17 @@ int NUM_INST;
 /* Purpose: To parse main function argument                    */
 /*                                                             */
 /***************************************************************/
-char** str_split(char *a_str, const char a_delim) {
-    char **result    = 0;
-    size_t count     = 0;
-    char *tmp        = a_str;
+char **str_split(char *a_str, const char a_delim) {
+    char **result = 0;
+    size_t count = 0;
+    char *tmp = a_str;
     char *last_comma = 0;
     char delim[2];
     delim[0] = a_delim;
     delim[1] = 0;
 
     /* Count how many elements will be extracted. */
-    while(*tmp) {
+    while (*tmp) {
         if (a_delim == *tmp) {
             count++;
             last_comma = tmp;
@@ -66,13 +67,13 @@ char** str_split(char *a_str, const char a_delim) {
      * knows where the list of returned strings ends. */
     count++;
 
-    result = malloc(sizeof(char*) * count);
+    result = malloc(sizeof(char *) * count);
 
-    if (result){
+    if (result) {
         size_t idx  = 0;
-        char* token = strtok(a_str, delim);
+        char *token = strtok(a_str, delim);
 
-        while (token){
+        while (token) {
             assert(idx < count);
             *(result + idx++) = strdup(token);
             token = strtok(0, delim);
@@ -110,10 +111,10 @@ uint32_t mem_read_32(uint32_t address) {
             uint32_t offset = address - MEM_REGIONS[i].start;
 
             return
-                (MEM_REGIONS[i].mem[offset+3] << 24) |
-                (MEM_REGIONS[i].mem[offset+2] << 16) |
-                (MEM_REGIONS[i].mem[offset+1] <<  8) |
-                (MEM_REGIONS[i].mem[offset+0] <<  0);
+                (MEM_REGIONS[i].mem[offset + 3] << 24) |
+                (MEM_REGIONS[i].mem[offset + 2] << 16) |
+                (MEM_REGIONS[i].mem[offset + 1] << 8) |
+                (MEM_REGIONS[i].mem[offset + 0] << 0);
         }
     }
 
@@ -134,10 +135,10 @@ void mem_write_32(uint32_t address, uint32_t value) {
                 address < (MEM_REGIONS[i].start + MEM_REGIONS[i].size)) {
             uint32_t offset = address - MEM_REGIONS[i].start;
 
-            MEM_REGIONS[i].mem[offset+3] = (value >> 24) & 0xFF;
-            MEM_REGIONS[i].mem[offset+2] = (value >> 16) & 0xFF;
-            MEM_REGIONS[i].mem[offset+1] = (value >>  8) & 0xFF;
-            MEM_REGIONS[i].mem[offset+0] = (value >>  0) & 0xFF;
+            MEM_REGIONS[i].mem[offset + 3] = (value >> 24) & 0xFF;
+            MEM_REGIONS[i].mem[offset + 2] = (value >> 16) & 0xFF;
+            MEM_REGIONS[i].mem[offset + 1] = (value >> 8) & 0xFF;
+            MEM_REGIONS[i].mem[offset + 0] = (value >> 0) & 0xFF;
             return;
         }
     }
@@ -194,8 +195,9 @@ void go() {
     }
 
     printf("Simulating...\n\n");
-    while (RUN_BIT)
+    while (RUN_BIT) {
         cycle();
+    }
     printf("Simulator halted\n\n");
 }
 
@@ -212,8 +214,9 @@ void mdump(int start, int stop) {
 
     printf("Memory content [0x%08x..0x%08x] :\n", start, stop);
     printf("-------------------------------------\n");
-    for (address = start; address <= stop; address += 4)
+    for (address = start; address <= stop; address += 4) {
         printf("0x%08x: 0x%08x\n", address, mem_read_32(address));
+    }
     printf("\n");
 }
 
@@ -232,8 +235,9 @@ void rdump() {
     printf("-------------------------------------\n");
     printf("PC: 0x%08x\n", CURRENT_STATE.PC);
     printf("Registers:\n");
-    for (k = 0; k < MIPS_REGS; k++)
+    for (k = 0; k < MIPS_REGS; k++) {
         printf("R%d: 0x%08x\n", k, CURRENT_STATE.REGS[k]);
+    }
     printf("\n");
 }
 
@@ -262,7 +266,7 @@ void init_memory() {
 void init_inst_info() {
     int i;
 
-    for(i = 0; i < NUM_INST; i++) {
+    for (i = 0; i < NUM_INST; i++) {
         INST_INFO[i].value = 0;
         INST_INFO[i].opcode = 0;
         INST_INFO[i].func_code = 0;

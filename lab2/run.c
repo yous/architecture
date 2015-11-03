@@ -8,7 +8,6 @@
 /***************************************************************/
 
 #include <stdio.h>
-
 #include "util.h"
 #include "run.h"
 
@@ -19,7 +18,7 @@
 /* Purpose: Process one instrction                             */
 /*                                                             */
 /***************************************************************/
-void process_instruction(){
+void process_instruction() {
 
     /* Your code */
 

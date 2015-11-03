@@ -36,7 +36,7 @@ typedef struct CPU_State_Struct {
 typedef struct inst_s {
     short opcode;
 
-    /*R-type*/
+    /* R-type */
     short func_code;
 
     union {
@@ -82,16 +82,16 @@ extern int RUN_BIT;             /* run bit */
 extern int INSTRUCTION_COUNT;
 
 /* Functions */
-char**          str_split(char *a_str, const char a_delim);
-int             fromBinary(char *s);
-uint32_t        mem_read_32(uint32_t address);
-void            mem_write_32(uint32_t address, uint32_t value);
-void            cycle();
-void            run(int num_cycles);
-void            go();
-void            mdump(int start, int stop);
-void            rdump();
-void            init_memory();
-void            init_inst_info();
+char** str_split(char *a_str, const char a_delim);
+int fromBinary(char *s);
+uint32_t mem_read_32(uint32_t address);
+void mem_write_32(uint32_t address, uint32_t value);
+void cycle();
+void run(int num_cycles);
+void go();
+void mdump(int start, int stop);
+void rdump();
+void init_memory();
+void init_inst_info();
 
 #endif
