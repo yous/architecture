@@ -118,7 +118,8 @@ uint32_t mem_read_32(uint32_t address) {
         }
     }
 
-    return 0;
+    printf("Memory Read Error: Exceed memory boundary 0x%x\n", address);
+    exit(1);
 }
 
 /***************************************************************/
