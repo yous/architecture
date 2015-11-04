@@ -82,7 +82,9 @@ void process_instruction() {
                         CURRENT_STATE.REGS[rs] - CURRENT_STATE.REGS[rt];
                     break;
                 default:
-                    printf("Unknown instruction type: %u\n", instr.value);
+                    printf("Unknown function code type: %hu\n",
+                            (unsigned short) instr.func_code);
+                    break;
             }
             break;
         // J-type
@@ -152,7 +154,9 @@ void process_instruction() {
                             CURRENT_STATE.REGS[rt]);
                     break;
                 default:
-                    printf("Unknown instruction type: %u\n", instr.value);
+                    printf("Unknown instruction type: %hu\n",
+                            (unsigned short) instr.opcode);
+                    break;
             }
             break;
     }
