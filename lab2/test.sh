@@ -5,9 +5,9 @@ make
 function res_print()
 {
   if [ $? -eq 0 ]; then
-    echo 'Pass'
+    echo -e '\x1b[32mPass\x1b[0m'
   else
-    echo 'Fail'
+    echo -e '\x1b[31mFail\x1b[0m'
   fi
 }
 
