@@ -115,18 +115,19 @@ void process_instruction() {
                     break;
                 // ANDI
                 case 12:
-                    CURRENT_STATE.REGS[rt] = CURRENT_STATE.REGS[rs] & imm;
+                    CURRENT_STATE.REGS[rt] = CURRENT_STATE.REGS[rs] &
+                        (uint32_t) (unsigned short) imm;
                     break;
                 // BEQ
                 case 4:
                     if (CURRENT_STATE.REGS[rs] == CURRENT_STATE.REGS[rt]) {
-                        CURRENT_STATE.PC += imm << 2;
+                        CURRENT_STATE.PC += (int32_t) imm << 2;
                     }
                     break;
                 // BNE
                 case 5:
                     if (CURRENT_STATE.REGS[rs] != CURRENT_STATE.REGS[rt]) {
-                        CURRENT_STATE.PC += imm << 2;
+                        CURRENT_STATE.PC += (int32_t) imm << 2;
                     }
                     break;
                 // LUI
@@ -140,12 +141,14 @@ void process_instruction() {
                     break;
                 // ORI
                 case 13:
-                    CURRENT_STATE.REGS[rt] = CURRENT_STATE.REGS[rs] | imm;
+                    CURRENT_STATE.REGS[rt] = CURRENT_STATE.REGS[rs] |
+                        (uint32_t) (unsigned short) imm;
                     break;
                 // SLTIU
                 case 11:
                     CURRENT_STATE.REGS[rt] =
-                        (CURRENT_STATE.REGS[rs] < (uint32_t) imm) ? 1 : 0;
+                        (CURRENT_STATE.REGS[rs] < (uint32_t) (int32_t) imm)
+                        ? 1 : 0;
                     break;
                 // SW
                 case 43:
