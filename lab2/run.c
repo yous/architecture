@@ -97,7 +97,7 @@ void process_instruction() {
         // JAL
         case 3:
             target = instr.r_t.target;
-            CURRENT_STATE.REGS[31] = CURRENT_STATE.PC + 4;
+            CURRENT_STATE.REGS[31] = CURRENT_STATE.PC;
             CURRENT_STATE.PC =
                 (CURRENT_STATE.PC & 0xF0000000) | (target << 2);
             break;
