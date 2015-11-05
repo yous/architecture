@@ -167,6 +167,5 @@ void process_instruction() {
     instr_index = (CURRENT_STATE.PC - MEM_TEXT_START) / 4;
     if (instr_index >= NUM_INST) {
         RUN_BIT = FALSE;
-        printf("Run bit unset pc: %x\n", CURRENT_STATE.PC);
     }
 }
