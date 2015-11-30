@@ -10,3 +10,12 @@ python lab1/assembler.py <assembly file>
 
 When the assembly file is `lab1/CS311/example_mod.s`, then the output should be
 the same as `lab1/CS311/example_mod.o`.
+
+## Lab 2: Building a Simple MIPS Emulator
+
+```
+make
+./cs311em [-m addr1:addr2] [-d] [-n num_instr] inputBinary
+```
+
+Test with `./test.sh`.
