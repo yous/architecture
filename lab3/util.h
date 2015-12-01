@@ -28,12 +28,6 @@
 #define BYTES_PER_WORD  4
 #define PIPE_STAGE      5
 
-typedef struct CPU_State_Struct {
-    uint32_t PC;                /* program counter */
-    uint32_t REGS[MIPS_REGS];   /* register file */
-    uint32_t PIPE[PIPE_STAGE];  /* pipeline stage */
-} CPU_State;
-
 typedef struct inst_s {
     short opcode;
 
@@ -65,6 +59,43 @@ typedef struct inst_s {
     // imm_expr *expr;
     // char *source_line;
 } instruction;
+
+typedef struct CPU_State_Struct {
+    uint32_t PC;                /* program counter */
+    uint32_t REGS[MIPS_REGS];   /* register file */
+    uint32_t PIPE[PIPE_STAGE];  /* pipeline stage */
+
+    struct {
+        unsigned char valid;
+        instruction *Instr;
+        uint32_t NPC;
+    } IF_ID;
+
+    struct {
+        uint32_t NPC;
+        uint32_t REG1;
+        uint32_t REG2;
+        uint32_t IMM;
+        short RT;
+        short RD;
+        uint16_t CONTROL;
+    } ID_EX;
+
+    struct {
+        uint32_t ALU_OUT;
+        uint32_t BR_TARGET;
+        uint32_t WRITE_DATA;
+        short WRITE_REG;
+        unsigned char CONTROL;
+    } EX_MEM;
+
+    struct {
+        uint32_t ALU_OUT;
+        uint32_t MEM_OUT;
+        short WRITE_REG;
+        unsigned char CONTROL;
+    } MEM_WB;
+} CPU_State;
 
 typedef struct {
     uint32_t start, size;

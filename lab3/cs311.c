@@ -75,6 +75,10 @@ void load_program(char *program_filename) {
         flag++;
     }
     CURRENT_STATE.PC = MEM_TEXT_START;
+    CURRENT_STATE.IF_ID.valid = FALSE;
+    CURRENT_STATE.ID_EX.CONTROL = 0;
+    CURRENT_STATE.EX_MEM.CONTROL = 0;
+    CURRENT_STATE.MEM_WB.CONTROL = 0;
     // printf("Read %d words from program into memory.\n\n", ii / 4);
 }
 
