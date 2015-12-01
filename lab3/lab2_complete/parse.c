@@ -19,7 +19,7 @@ instruction parsing_instr(const char *buffer, const int index) {
     instruction instr;
     char opcode[7], rs[6], rt[6], rd[6], shamt[6], imm[17], target[27], func_code[7] = {0};
     int word;
-    word = fromBinary(buffer);
+    word = fromBinary((char *) buffer);
     mem_write_32(MEM_TEXT_START + index, word);
     sscanf(buffer, "%6s", opcode);
 
@@ -76,7 +76,7 @@ instruction parsing_instr(const char *buffer, const int index) {
 
 void parsing_data(const char *buffer, const int index) {
     uint32_t word;
-    word = fromBinary(buffer);
+    word = fromBinary((char *) buffer);
     mem_write_32(MEM_DATA_START + index, word);
 }
 

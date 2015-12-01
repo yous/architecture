@@ -95,6 +95,7 @@ void run(int num_cycles);
 void go();
 void mdump(int start, int stop);
 void rdump();
+void pdump();
 void init_memory();
 void init_inst_info();
 
