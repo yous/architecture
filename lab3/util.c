@@ -269,8 +269,8 @@ void pdump() {
 
     printf("Current pipeline PC state :\n");
     printf("-------------------------------------\n");
-    printf("CYCLE %d:", INSTRUCTION_COUNT );
-    for(k = 0; k < 5; k++) {
+    printf("CYCLE %d:", INSTRUCTION_COUNT);
+    for (k = 0; k < 5; k++) {
         if (CURRENT_STATE.PIPE[k]) {
             printf("0x%08x", CURRENT_STATE.PIPE[k]);
         } else {
