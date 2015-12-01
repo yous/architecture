@@ -112,6 +112,8 @@ int main(int argc, char *argv[]) {
     int num_inst = 0;
     int i = 100;                // for loop
 
+    int nobp_set = 0;
+    int data_fwd_set = 0;
     int mem_dump_set = 0;
     int debug_set = 0;
     int num_inst_set = 0;
@@ -119,7 +121,7 @@ int main(int argc, char *argv[]) {
 
     /* Error Checking */
     if (argc < 2) {
-        printf("Error: usage: %s [-m addr1:addr2] [-d] [-n num_instr] inputBinary\n", argv[0]);
+        printf("Error: usage: %s [-nobp] [-f] [-m addr1:addr2] [-d] [-p] [-n num_instr] inputBinary\n", argv[0]);
         exit(1);
     }
 
@@ -129,7 +131,11 @@ int main(int argc, char *argv[]) {
     // print_parse_result();
 
     while (count != argc - 1) {
-        if (strcmp(argv[count], "-m") == 0) {
+        if (strcmp(argv[count], "-nobp") == 0) {
+            nobp_set = 1;
+        } else if (strcmp(argv[count], "-f") == 0) {
+            data_fwd_set = 1;
+        } else if (strcmp(argv[count], "-m") == 0) {
             tokens = str_split(argv[++count], ':');
 
             addr1 = (int) strtol(*(tokens), NULL, 16);
