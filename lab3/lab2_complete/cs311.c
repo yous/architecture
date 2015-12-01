@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     // for checking parse result
     // print_parse_result();
 
-    while(count != argc-1){
+    while (count != argc - 1) {
         if (strcmp(argv[count], "-m") == 0) {
             tokens = str_split(argv[++count], ':');
 
