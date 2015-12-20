@@ -107,6 +107,70 @@ void process_instruction(int nobp_set, int data_fwd_set) {
             op2 = CURRENT_STATE.ID_EX.REG2;
         }
 
+        if (data_fwd_set) {
+            // MEM/WB RegWrite
+            if (CURRENT_STATE.MEM_WB.CONTROL & 0x2) {
+                uint32_t forward_data;
+                // MemToReg
+                if (CURRENT_STATE.MEM_WB.CONTROL & 0x1) {
+                    forward_data = CURRENT_STATE.MEM_WB.MEM_OUT;
+                } else {
+                    forward_data = CURRENT_STATE.MEM_WB.ALU_OUT;
+                }
+
+                // ALUSrc
+                if (!(control & 0x20)) {
+                    if (CURRENT_STATE.ID_EX.RT ==
+                            CURRENT_STATE.MEM_WB.WRITE_REG) {
+                        op2 = forward_data;
+                    }
+                }
+                if ((control >> 6) & 0xF == 2
+                        && (CURRENT_STATE.ID_EX.IMM == 0x0
+                            || CURRENT_STATE.ID_EX.IMM == 0x2)) {
+                    // SLL, SRL
+                    if (CURRENT_STATE.ID_EX.RT ==
+                            CURRENT_STATE.MEM_WB.WRITE_REG) {
+                        op1 = forward_data;
+                    }
+                } else if ((control >> 6) & 0xF != 6) {
+                    // Not LUI
+                    if (CURRENT_STATE.ID_EX.RS ==
+                            CURRENT_STATE.MEM_WB.WRITE_REG) {
+                        op1 = forward_data;
+                    }
+                }
+            }
+
+            // EX_MEM RegWrite
+            if (CURRENT_STATE.EX_MEM.CONTROL & 0x2) {
+                uint32_t forward_data = CURRENT_STATE.EX_MEM.ALU_OUT;
+
+                // ALUSrc
+                if (!(control & 0x20)) {
+                    if (CURRENT_STATE.ID_EX.RT ==
+                            CURRENT_STATE.EX_MEM.WRITE_REG) {
+                        op2 = forward_data;
+                    }
+                }
+                if ((control >> 6) & 0xF == 2
+                        && (CURRENT_STATE.ID_EX.IMM == 0x0
+                            || CURRENT_STATE.ID_EX.IMM == 0x2)) {
+                    // SLL, SRL
+                    if (CURRENT_STATE.ID_EX.RT ==
+                            CURRENT_STATE.EX_MEM.WRITE_REG) {
+                        op1 = forward_data;
+                    }
+                } else if ((control >> 6) & 0xF != 6) {
+                    // Not LUI
+                    if (CURRENT_STATE.ID_EX.RS ==
+                            CURRENT_STATE.EX_MEM.WRITE_REG) {
+                        op1 = forward_data;
+                    }
+                }
+            }
+        }
+
         // RegDst
         if (control & 0x100) {
             write_reg = CURRENT_STATE.ID_EX.RD;
@@ -292,6 +356,7 @@ void process_instruction(int nobp_set, int data_fwd_set) {
     } else if (CURRENT_STATE.IF_ID.valid) {
         inst = CURRENT_STATE.IF_ID.Instr;
         CURRENT_STATE.ID_EX.NPC = CURRENT_STATE.IF_ID.NPC;
+        CURRENT_STATE.ID_EX.RS = RS(inst);
         CURRENT_STATE.ID_EX.RT = RT(inst);
         CURRENT_STATE.ID_EX.RD = RD(inst);
 
