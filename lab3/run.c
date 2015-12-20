@@ -192,12 +192,12 @@ void process_instruction(int nobp_set, int data_fwd_set) {
     if (CURRENT_STATE.IF_ID.valid) {
         inst = CURRENT_STATE.IF_ID.Instr;
         CURRENT_STATE.ID_EX.NPC = CURRENT_STATE.IF_ID.NPC;
-        CURRENT_STATE.ID_EX.RT = inst->r_t.r_i.rt;
-        CURRENT_STATE.ID_EX.RD = inst->r_t.r_i.r_i.r.rd;
+        CURRENT_STATE.ID_EX.RT = RT(inst);
+        CURRENT_STATE.ID_EX.RD = RD(inst);
 
-        CURRENT_STATE.ID_EX.REG1 = CURRENT_STATE.REGS[inst->r_t.r_i.rs];
+        CURRENT_STATE.ID_EX.REG1 = CURRENT_STATE.REGS[RS(inst)];
         CURRENT_STATE.ID_EX.REG2 = 0;
-        CURRENT_STATE.ID_EX.IMM = (int32_t) inst->r_t.r_i.r_i.imm;
+        CURRENT_STATE.ID_EX.IMM = (int32_t) IMM(inst);
 
         switch (OPCODE(inst)) {
             // (0x001001) ADDIU
@@ -247,7 +247,7 @@ void process_instruction(int nobp_set, int data_fwd_set) {
                 break;
             // (0x000000) ADDU, AND, NOR, OR, SLTU, SLL, SRL, SUBU, JR
             case 0x0:
-                CURRENT_STATE.ID_EX.REG2 = CURRENT_STATE.REGS[inst->r_t.r_i.rt];
+                CURRENT_STATE.ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
                 CURRENT_STATE.ID_EX.IMM = 0;
                 // 100100 000 10
                 CURRENT_STATE.ID_EX.CONTROL = 0x482;
