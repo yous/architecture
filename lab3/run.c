@@ -116,7 +116,8 @@ void process_instruction(int nobp_set, int data_fwd_set) {
                 break;
             // R
             case 2:
-                switch (CURRENT_STATE.ID_EX.IMM & 0x3F) {
+                // FUNC
+                switch (CURRENT_STATE.ID_EX.IMM) {
                     // ADDU
                     case 0x21:
                         CURRENT_STATE.EX_MEM.ALU_OUT = op1 + op2;
@@ -153,7 +154,8 @@ void process_instruction(int nobp_set, int data_fwd_set) {
                     case 0x8:
                         break;
                     default:
-                        printf("Unknown function code type: %d\n", FUNC(inst));
+                        printf("Unknown function code type: %d\n",
+                                CURRENT_STATE.ID_EX.IMM);
                         break;
                 }
                 break;
