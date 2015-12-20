@@ -33,6 +33,7 @@ instruction *get_inst_info(uint32_t pc) {
 void process_instruction(int nobp_set, int data_fwd_set) {
     instruction *inst;
     int i;              // for loop
+    uint32_t new_pc = CURRENT_STATE.PC + BYTES_PER_WORD;
 
     /* pipeline */
     for (i = PIPE_STAGE - 1; i > 0; i--) {
@@ -41,7 +42,9 @@ void process_instruction(int nobp_set, int data_fwd_set) {
     CURRENT_STATE.PIPE[0] = CURRENT_STATE.PC;
 
     /* WB stage */
-    if (CURRENT_STATE.MEM_WB.CONTROL) {
+    if (CURRENT_STATE.MEM_WB.stalls > 0) {
+        CURRENT_STATE.MEM_WB.stalls--;
+    } else {
         unsigned char control = CURRENT_STATE.MEM_WB.CONTROL;
         if (control & 0x2) {
             if (control & 0x1) {
@@ -55,7 +58,10 @@ void process_instruction(int nobp_set, int data_fwd_set) {
     }
 
     /* MEM stage */
-    if (CURRENT_STATE.EX_MEM.CONTROL) {
+    if (CURRENT_STATE.EX_MEM.stalls > 0) {
+        CURRENT_STATE.EX_MEM.stalls--;
+        CURRENT_STATE.MEM_WB.CONTROL = 0;
+    } else {
         unsigned char control = CURRENT_STATE.EX_MEM.CONTROL;
         CURRENT_STATE.MEM_WB.CONTROL = CURRENT_STATE.EX_MEM.CONTROL & 0x3;
         CURRENT_STATE.MEM_WB.ALU_OUT = CURRENT_STATE.EX_MEM.ALU_OUT;
@@ -64,7 +70,7 @@ void process_instruction(int nobp_set, int data_fwd_set) {
         // Branch
         if (control & 0x10) {
             if (CURRENT_STATE.EX_MEM.ALU_OUT) {
-                CURRENT_STATE.PC = CURRENT_STATE.EX_MEM.BR_TARGET;
+                new_pc = CURRENT_STATE.EX_MEM.BR_TARGET;
             }
         }
 
@@ -83,10 +89,14 @@ void process_instruction(int nobp_set, int data_fwd_set) {
     }
 
     /* EX stage */
-    if (CURRENT_STATE.ID_EX.CONTROL) {
+    if (CURRENT_STATE.ID_EX.stalls > 0) {
+        CURRENT_STATE.ID_EX.stalls--;
+        CURRENT_STATE.EX_MEM.CONTROL = 0;
+    } else {
         uint16_t control = CURRENT_STATE.ID_EX.CONTROL;
         uint32_t op1 = CURRENT_STATE.ID_EX.REG1;
         uint32_t op2;
+        short write_reg;
         CURRENT_STATE.EX_MEM.CONTROL = control & 0x1F;
         CURRENT_STATE.EX_MEM.WRITE_DATA = CURRENT_STATE.ID_EX.REG2;
 
@@ -99,10 +109,11 @@ void process_instruction(int nobp_set, int data_fwd_set) {
 
         // RegDst
         if (control & 0x100) {
-            CURRENT_STATE.EX_MEM.WRITE_REG = CURRENT_STATE.ID_EX.RD;
+            write_reg = CURRENT_STATE.ID_EX.RD;
         } else {
-            CURRENT_STATE.EX_MEM.WRITE_REG = CURRENT_STATE.ID_EX.RT;
+            write_reg = CURRENT_STATE.ID_EX.RT;
         }
+        CURRENT_STATE.EX_MEM.WRITE_REG = write_reg;
 
         // ALUOp
         switch ((control >> 6) & 0xF) {
@@ -150,9 +161,6 @@ void process_instruction(int nobp_set, int data_fwd_set) {
                     case 0x23:
                         CURRENT_STATE.EX_MEM.ALU_OUT = op1 - op2;
                         break;
-                    // JR
-                    case 0x8:
-                        break;
                     default:
                         printf("Unknown function code type: %d\n",
                                 CURRENT_STATE.ID_EX.IMM);
@@ -162,6 +170,8 @@ void process_instruction(int nobp_set, int data_fwd_set) {
             // BNE
             case 3:
                 CURRENT_STATE.EX_MEM.ALU_OUT = op1 != op2;
+                CURRENT_STATE.EX_MEM.BR_TARGET =
+                    CURRENT_STATE.ID_EX.NPC + (CURRENT_STATE.ID_EX.IMM << 2);
                 break;
             // ADDIU
             case 4:
@@ -186,10 +196,100 @@ void process_instruction(int nobp_set, int data_fwd_set) {
         }
 
         CURRENT_STATE.EX_MEM.BR_TARGET = CURRENT_STATE.ID_EX.NPC + (CURRENT_STATE.ID_EX.IMM << 2);
+
+        // RegWrite
+        if (control & 0x2) {
+            inst = CURRENT_STATE.IF_ID.Instr;
+            switch (OPCODE(inst)) {
+                // (0x001001) ADDIU
+                case 0x9:
+                // (0x001100) ANDI
+                case 0xC:
+                // (0x001101) ORI
+                case 0xD:
+                // (0x001011) SLTIU
+                case 0xB:
+                // (0x101011) SW
+                case 0x2B:
+                    if (write_reg == RS(inst)) {
+                        if (!data_fwd_set) {
+                            CURRENT_STATE.IF_stalls = 2;
+                            CURRENT_STATE.IF_ID.stalls = 2;
+                            CURRENT_STATE.ID_EX.stalls = 2;
+                        }
+                    }
+                    break;
+                // (0x100011) LW
+                case 0x23:
+                    if (write_reg == RS(inst)) {
+                        if (!data_fwd_set) {
+                            CURRENT_STATE.IF_stalls = 3;
+                            CURRENT_STATE.IF_ID.stalls = 3;
+                            CURRENT_STATE.ID_EX.stalls = 3;
+                        } else {
+                            CURRENT_STATE.IF_stalls = 1;
+                            CURRENT_STATE.IF_ID.stalls = 1;
+                            CURRENT_STATE.ID_EX.stalls = 1;
+                        }
+                    }
+                    break;
+                // (0x000100) BEQ
+                case 0x4:
+                // (0x000101) BNE
+                case 0x5:
+                    if (write_reg == RS(inst) || write_reg == RT(inst)) {
+                        if (!data_fwd_set) {
+                            CURRENT_STATE.IF_stalls = 2;
+                            CURRENT_STATE.IF_ID.stalls = 2;
+                            CURRENT_STATE.ID_EX.stalls = 2;
+                        }
+                    }
+                    break;
+                // (0x000000) ADDU, AND, NOR, OR, SLTU, SLL, SRL, SUBU, JR
+                case 0x0:
+                    switch (FUNC(inst)) {
+                        // SLL
+                        case 0x0:
+                        // SRL
+                        case 0x2:
+                            if (write_reg == RT(inst)) {
+                                if (!data_fwd_set) {
+                                    CURRENT_STATE.IF_stalls = 2;
+                                    CURRENT_STATE.IF_ID.stalls = 2;
+                                    CURRENT_STATE.ID_EX.stalls = 2;
+                                }
+                            }
+                            break;
+                        // JR
+                        case 0x8:
+                            if (write_reg == RS(inst)) {
+                                if (!data_fwd_set) {
+                                    CURRENT_STATE.IF_stalls = 2;
+                                    CURRENT_STATE.IF_ID.stalls = 2;
+                                    CURRENT_STATE.ID_EX.stalls = 2;
+                                }
+                            }
+                            break;
+                        default:
+                            if (write_reg == RS(inst)
+                                    || write_reg == RT(inst)) {
+                                if (!data_fwd_set) {
+                                    CURRENT_STATE.IF_stalls = 2;
+                                    CURRENT_STATE.IF_ID.stalls = 2;
+                                    CURRENT_STATE.ID_EX.stalls = 2;
+                                }
+                            }
+                    }
+                    break;
+            }
+        }
     }
 
     /* ID stage */
-    if (CURRENT_STATE.IF_ID.valid) {
+    if (CURRENT_STATE.IF_ID.stalls > 0) {
+        CURRENT_STATE.IF_ID.stalls--;
+        CURRENT_STATE.ID_EX.CONTROL = 0;
+    } else if (CURRENT_STATE.IF_ID.valid) {
         inst = CURRENT_STATE.IF_ID.Instr;
         CURRENT_STATE.ID_EX.NPC = CURRENT_STATE.IF_ID.NPC;
         CURRENT_STATE.ID_EX.RT = RT(inst);
@@ -245,12 +345,29 @@ void process_instruction(int nobp_set, int data_fwd_set) {
                 // x00110 100 0x
                 CURRENT_STATE.ID_EX.CONTROL = 0xD0;
                 break;
+            // (0x000010) J
+            case 0x2:
+                new_pc = CURRENT_STATE.IF_ID.NPC + (IMM(inst) << 2);
+                CURRENT_STATE.ID_EX.CONTROL = 0;
+                break;
+            // (0x000011) JAL
+            case 0x3:
+                CURRENT_STATE.REGS[31] = CURRENT_STATE.IF_ID.NPC;
+                new_pc = IMM(inst) << 2;
+                CURRENT_STATE.ID_EX.CONTROL = 0;
+                break;
             // (0x000000) ADDU, AND, NOR, OR, SLTU, SLL, SRL, SUBU, JR
             case 0x0:
-                CURRENT_STATE.ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
-                CURRENT_STATE.ID_EX.IMM = 0;
-                // 100100 000 10
-                CURRENT_STATE.ID_EX.CONTROL = 0x482;
+                // JR
+                if (FUNC(inst) == 8) {
+                    new_pc = CURRENT_STATE.REGS[RS(inst)];
+                    CURRENT_STATE.ID_EX.CONTROL = 0;
+                } else {
+                    CURRENT_STATE.ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
+                    CURRENT_STATE.ID_EX.IMM = FUNC(inst);
+                    // 100100 000 10
+                    CURRENT_STATE.ID_EX.CONTROL = 0x482;
+                }
                 break;
             default:
                 printf("Unknown instruction type: %d\n", OPCODE(inst));
@@ -259,10 +376,44 @@ void process_instruction(int nobp_set, int data_fwd_set) {
     }
 
     /* IF stage */
-    CURRENT_STATE.IF_ID.Instr = get_inst_info(CURRENT_STATE.PC);
-    CURRENT_STATE.IF_ID.valid = 1;
-    CURRENT_STATE.PC += BYTES_PER_WORD;
-    CURRENT_STATE.IF_ID.NPC = CURRENT_STATE.PC;
+    if (CURRENT_STATE.IF_stalls > 0) {
+        CURRENT_STATE.IF_stalls--;
+        CURRENT_STATE.IF_ID.valid = FALSE;
+    } else {
+        inst = get_inst_info(CURRENT_STATE.PC);
+        CURRENT_STATE.IF_ID.valid = TRUE;
+        CURRENT_STATE.IF_ID.Instr = inst;
+        CURRENT_STATE.PC = new_pc;
+        CURRENT_STATE.IF_ID.NPC = CURRENT_STATE.PC + BYTES_PER_WORD;
+
+        switch (OPCODE(inst)) {
+            // (0x000100) BEQ
+            case 0x4:
+                if (!nobp_set) {
+                    CURRENT_STATE.IF_stalls = 3;
+                }
+                break;
+            // (0x000101) BNE
+            case 0x5:
+                if (!nobp_set) {
+                    CURRENT_STATE.IF_stalls = 3;
+                }
+                break;
+            // (0x000010) J
+            case 0x2:
+            // (0x000011) JAL
+            case 0x3:
+                CURRENT_STATE.IF_stalls = 1;
+                break;
+            // (0x000000) ADDU, AND, NOR, OR, SLTU, SLL, SRL, SUBU, JR
+            case 0x0:
+                // JR
+                if (FUNC(inst) == 0x8) {
+                    CURRENT_STATE.IF_stalls = 1;
+                }
+                break;
+        }
+    }
 
     if (CURRENT_STATE.PC < MEM_REGIONS[0].start || CURRENT_STATE.PC >= (MEM_REGIONS[0].start + (NUM_INST * 4))) {
         RUN_BIT = FALSE;

@@ -65,10 +65,13 @@ typedef struct CPU_State_Struct {
     uint32_t REGS[MIPS_REGS];   /* register file */
     uint32_t PIPE[PIPE_STAGE];  /* pipeline stage */
 
+    unsigned char IF_stalls;
+
     struct {
         unsigned char valid;
         instruction *Instr;
         uint32_t NPC;
+        unsigned char stalls;
     } IF_ID;
 
     struct {
@@ -79,6 +82,7 @@ typedef struct CPU_State_Struct {
         short RT;
         short RD;
         uint16_t CONTROL;
+        unsigned char stalls;
     } ID_EX;
 
     struct {
@@ -87,6 +91,7 @@ typedef struct CPU_State_Struct {
         uint32_t WRITE_DATA;
         short WRITE_REG;
         unsigned char CONTROL;
+        unsigned char stalls;
     } EX_MEM;
 
     struct {
@@ -94,6 +99,7 @@ typedef struct CPU_State_Struct {
         uint32_t MEM_OUT;
         short WRITE_REG;
         unsigned char CONTROL;
+        unsigned char stalls;
     } MEM_WB;
 } CPU_State;
 
