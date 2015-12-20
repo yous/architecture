@@ -30,7 +30,7 @@ instruction *get_inst_info(uint32_t pc) {
 /* Purpose: Process one instrction                             */
 /*                                                             */
 /***************************************************************/
-void process_instruction() {
+void process_instruction(int nobp_set, int data_fwd_set) {
     instruction *inst;
     int i;              // for loop
 

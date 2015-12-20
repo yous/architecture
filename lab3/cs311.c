@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
                 printf("Simulator halted\n\n");
                 break;
             }
-            cycle();
+            cycle(nobp_set, data_fwd_set);
 
             if (pipe_dump_set) {
                 pdump();
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
                 printf("Simulator halted\n\n");
                 break;
             }
-            cycle();
+            cycle(nobp_set, data_fwd_set);
 
             pdump();
             if (mem_dump_set) {
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
             }
         }
     } else {
-        run(i);
+        run(i, nobp_set, data_fwd_set);
         rdump();
 
         if (mem_dump_set) {
