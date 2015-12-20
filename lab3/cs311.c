@@ -178,6 +178,19 @@ int main(int argc, char *argv[]) {
                 mdump(addr1, addr2);
             }
         }
+    } else if (pipe_dump_set) {
+        for (; i > 0; i--) {
+            if (RUN_BIT == FALSE) {
+                printf("Simulator halted\n\n");
+                break;
+            }
+            cycle();
+
+            pdump();
+            if (mem_dump_set) {
+                mdump(addr1, addr2);
+            }
+        }
     } else {
         run(i);
         rdump();
