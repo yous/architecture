@@ -358,15 +358,24 @@ void process_instruction(int nobp_set, int data_fwd_set) {
                 break;
             // (0x000000) ADDU, AND, NOR, OR, SLTU, SLL, SRL, SUBU, JR
             case 0x0:
-                // JR
-                if (FUNC(inst) == 8) {
-                    new_pc = CURRENT_STATE.REGS[RS(inst)];
-                    CURRENT_STATE.ID_EX.CONTROL = 0;
-                } else {
-                    CURRENT_STATE.ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
-                    CURRENT_STATE.ID_EX.IMM = FUNC(inst);
-                    // 100100 000 10
-                    CURRENT_STATE.ID_EX.CONTROL = 0x482;
+                switch (FUNC(inst)) {
+                    // SLL
+                    case 0x0:
+                    // SRL
+                    case 0x2:
+                        CURRENT_STATE.ID_EX.REG1 = CURRENT_STATE.REGS[RT(inst)];
+                        break;
+                    // JR
+                    case 0x8:
+                        new_pc = CURRENT_STATE.REGS[RS(inst)];
+                        CURRENT_STATE.ID_EX.CONTROL = 0;
+                        break;
+                    default:
+                        CURRENT_STATE.ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
+                        CURRENT_STATE.ID_EX.IMM = FUNC(inst);
+                        // 100100 000 10
+                        CURRENT_STATE.ID_EX.CONTROL = 0x482;
+                        break;
                 }
                 break;
             default:
