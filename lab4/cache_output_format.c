@@ -1,8 +1,21 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #define BYTES_PER_WORD 4
+
+struct cache {
+    unsigned char valid;
+    unsigned char dirty;
+    unsigned int content;
+};
+
+struct list_entry {
+    unsigned int way;
+    struct list_entry *prev;
+    struct list_entry *next;
+};
 
 /***************************************************************/
 /*                                                             */
@@ -68,7 +81,7 @@ void sdump(int total_reads, int total_writes, int write_backs,
 /*                                                             */
 /*                                                             */
 /***************************************************************/
-void xdump(int set, int way, uint32_t **cache) {
+void xdump(int set, int way, struct cache **cache) {
     int i, j, k = 0;
 
     printf("Cache Content:\n");
@@ -87,37 +100,241 @@ void xdump(int set, int way, uint32_t **cache) {
             if (k != 0 && j == 0) {
                 printf("          ");
             }
-            printf("0x%08x  ", cache[i][j]);
+            printf("0x%08x  ", cache[i][j].content);
         }
         printf("\n");
     }
     printf("\n");
 }
 
+void usage(char *program) {
+    printf("Usage: %s [-c cap:assoc:bsize] [-x] input_trace\n", program);
+    exit(1);
+}
+
 int main(int argc, char *argv[]) {
-    uint32_t **cache;
-    int i, j, k;
-    int capacity = 256;
-    int way = 4;
-    int blocksize = 8;
-    int set = capacity / way / blocksize;
-    int words = blocksize / BYTES_PER_WORD;
+    struct cache **cache;
+    struct list_entry **access_list;
+    char *filename;
+    FILE *program;
+    char buffer[33];
+    char operation;
+    unsigned int address;
+
+    int i, j;
+    int opt;
+    int tmp;
+
+    int capacity;
+    int way;
+    int blocksize;
+    int set;
+    int words;
+    int index_size;
+
+    int cache_config_set = 0;
+    int cache_dump_set = 0;
+
+    int total_reads = 0;
+    int total_writes = 0;
+    int write_backs = 0;
+    int reads_hits = 0;
+    int write_hits = 0;
+    int reads_misses = 0;
+    int write_misses = 0;
+
+    // Argument check
+    if (argc < 2) {
+        usage(argv[0]);
+    }
+
+    while ((opt = getopt(argc, argv, "c:x")) != -1) {
+        switch (opt) {
+            case 'c':
+                cache_config_set = 1;
+                if (sscanf(optarg, "%d:%d:%d",
+                            &capacity, &way, &blocksize) != 3) {
+                    usage(argv[0]);
+                }
+                if (capacity < 4 || capacity > 8192) {
+                    printf("Capacity should be between 4B and 8KB.\n");
+                    exit(1);
+                }
+                if (way < 1 || way > 16) {
+                    printf("Associativity should be between 1 and 16.\n");
+                    exit(1);
+                }
+                if (blocksize < 4 || blocksize > 32) {
+                    printf("Block size should be between 4B and 32B.\n");
+                    exit(1);
+                }
+                set = capacity / way / blocksize;
+                words = blocksize / BYTES_PER_WORD;
+
+                tmp = set / 2;
+                index_size = 0;
+                while (tmp > 0) {
+                    index_size++;
+                    tmp >>= 1;
+                }
+                break;
+            case 'x':
+                cache_dump_set = 1;
+                break;
+            case '?':
+                usage(argv[0]);
+        }
+    }
+    if (!cache_config_set) {
+        printf("The cache parameters are specified with \"-c\" option.\n");
+        exit(1);
+    }
+    if (argc == optind) {
+        usage(argv[0]);
+    }
+    filename = argv[optind];
 
     // allocate
-    cache = (uint32_t **) malloc(sizeof(uint32_t *) * set);
+    cache = (struct cache **) malloc(sizeof(struct cache *) * set);
+    access_list = (struct list_entry **)
+        malloc(sizeof(struct list_entry *) * set);
     for (i = 0; i < set; i++) {
-        cache[i] = (uint32_t *) malloc(sizeof(uint32_t) * way);
-    }
-    for (i = 0; i < set; i++) {
+        struct list_entry *entry;
+        struct list_entry *prev_entry = NULL;
+
+        cache[i] = (struct cache *) malloc(sizeof(struct cache) * way);
         for (j = 0; j < way; j++) {
-            cache[i][j] = 0x0;
+            cache[i][j].valid = 0;
+            cache[i][j].dirty = 0;
+            cache[i][j].content = 0x0;
+        }
+
+        entry = (struct list_entry *) malloc(sizeof(struct list_entry));
+        entry->way = 0;
+        entry->prev = prev_entry;
+        access_list[i] = entry;
+        for (j = 1; j < way; j++) {
+            entry->next =
+                (struct list_entry *) malloc(sizeof(struct list_entry));
+            prev_entry = entry;
+            entry = entry->next;
+            entry->way = j;
+            entry->prev = prev_entry;
+        }
+        entry->next = NULL;
+    }
+
+    // Open program file.
+    program = fopen(filename, "r");
+    if (program == NULL) {
+        printf("Error: Can't open program file \"%s\"\n", filename);
+        exit(-1);
+    }
+
+    while (fgets(buffer, 33, program) != NULL) {
+        unsigned int entry;
+        unsigned int index;
+        int _way;
+        struct cache *result_cache;
+        struct list_entry *list_item;
+        int hit;
+        int invalid_exist;
+
+        sscanf(buffer, "%c %x", &operation, &address);
+
+        entry = address & ~(blocksize - 1);
+        index = (address / blocksize) & ((1 << index_size) - 1);
+        hit = 0;
+        for (i = 0; i < way; i++) {
+            if (cache[index][i].valid && cache[index][i].content == entry) {
+                hit = 1;
+                _way = i;
+                result_cache = &cache[index][i];
+
+                list_item = access_list[index];
+                while (list_item->way != i) {
+                    list_item = list_item->next;
+                }
+                if (list_item->prev != NULL) {
+                    list_item->prev->next = list_item->next;
+                    if (list_item->next != NULL) {
+                        list_item->next->prev = list_item->prev;
+                    }
+                    access_list[index]->prev = list_item;
+                    list_item->prev = NULL;
+                    list_item->next = access_list[index];
+                    access_list[index] = list_item;
+                }
+                break;
+            }
+        }
+        if (!hit) {
+            struct cache *evict_cache;
+
+            list_item = access_list[index];
+            invalid_exist = 0;
+            for (i = 0; i < way; i++) {
+                if (!cache[index][i].valid) {
+                    invalid_exist = 1;
+                    evict_cache = &cache[index][i];
+                    _way = i;
+                    while (list_item->way != i) {
+                        list_item = list_item->next;
+                    }
+                    break;
+                }
+            }
+            if (!invalid_exist) {
+                for (i = 1; i < way; i++) {
+                    list_item = list_item->next;
+                }
+                evict_cache = &cache[index][list_item->way];
+                _way = list_item->way;
+            }
+            if (evict_cache->dirty) {
+                write_backs++;
+            }
+            evict_cache->valid = 1;
+            evict_cache->dirty = 0;
+            evict_cache->content = entry;
+            result_cache = evict_cache;
+
+            if (list_item->prev != NULL) {
+                list_item->prev->next = list_item->next;
+                if (list_item->next != NULL) {
+                    list_item->next->prev = list_item->prev;
+                }
+                access_list[index]->prev = list_item;
+                list_item->prev = NULL;
+                list_item->next = access_list[index];
+                access_list[index] = list_item;
+            }
+        }
+
+        switch (operation) {
+            case 'R':
+                total_reads++;
+                hit ? reads_hits++ : reads_misses++;
+                break;
+            case 'W':
+                result_cache->dirty = 1;
+                total_writes++;
+                hit ? write_hits++ : write_misses++;
+                break;
         }
     }
 
-    // test example
     cdump(capacity, way, blocksize);
-    sdump(0, 0, 0, 0, 0, 0, 0);
-    xdump(set, way, cache);
+    sdump(total_reads, total_writes, write_backs,
+            reads_hits, write_hits, reads_misses, write_misses);
+    if (cache_dump_set) {
+        xdump(set, way, cache);
+    }
+
+    for (i = 0; i < set; i++) {
+        free(cache[i]);
+    }
+    free(cache);
 
     return 0;
 }
