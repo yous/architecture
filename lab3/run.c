@@ -28,6 +28,11 @@ void pipe_stall(int stage) {
     CURRENT_STATE.IF_ID.stall = TRUE;
 }
 
+void pipe_branch_predict(uint32_t pc) {
+    CURRENT_STATE.PC = pc;
+    CURRENT_STATE.PIPE[1] = 0;
+}
+
 void pipe_branch_flush(int stage) {
     CURRENT_STATE.PC = CURRENT_STATE.PIPE[stage] + BYTES_PER_WORD;
     CURRENT_STATE.PIPE[0] = 0;
@@ -73,6 +78,16 @@ void process_instruction(int num_cycles, int nobp_set, int data_fwd_set) {
     CURRENT_STATE.IF_ID.stall = FALSE;
     CURRENT_STATE.IF_stall = FALSE;
 
+    if (CURRENT_STATE.branch_predict_fail) {
+        CURRENT_STATE.branch_predict_fail = FALSE;
+        CURRENT_STATE.PIPE[0] = CURRENT_STATE.PIPE[4] + BYTES_PER_WORD;
+        CURRENT_STATE.PC = CURRENT_STATE.PIPE[0];
+        new_pc = CURRENT_STATE.PC + BYTES_PER_WORD;
+        CURRENT_STATE.PIPE[1] = 0;
+        CURRENT_STATE.PIPE[2] = 0;
+        CURRENT_STATE.PIPE[3] = 0;
+    }
+
     /* WB stage */
     if (CURRENT_STATE.PIPE[4]) {
         unsigned char control = CURRENT_STATE.MEM_WB.CONTROL;
@@ -101,6 +116,8 @@ void process_instruction(int num_cycles, int nobp_set, int data_fwd_set) {
         if (control & 0x10) {
             if (nobp_set) {
                 pipe_branch_flush(3);
+            } else if (!CURRENT_STATE.EX_MEM.ALU_OUT) {
+                CURRENT_STATE.branch_predict_fail = TRUE;
             }
             if (CURRENT_STATE.EX_MEM.ALU_OUT) {
                 CURRENT_STATE.PC = CURRENT_STATE.EX_MEM.BR_TARGET;
@@ -290,8 +307,12 @@ void process_instruction(int num_cycles, int nobp_set, int data_fwd_set) {
             // BEQ
             case 1:
                 CURRENT_STATE.EX_MEM.ALU_OUT = op1 == op2;
-                if (nobp_set || !CURRENT_STATE.EX_MEM.ALU_OUT) {
+                if (nobp_set) {
                     pipe_branch_flush(2);
+                } else {
+                    CURRENT_STATE.PC = CURRENT_STATE.ID_EX.NPC
+                        + (CURRENT_STATE.ID_EX.IMM << 2);
+                    pipe_jump_flush();
                 }
                 break;
             // R
@@ -340,8 +361,12 @@ void process_instruction(int num_cycles, int nobp_set, int data_fwd_set) {
             // BNE
             case 3:
                 CURRENT_STATE.EX_MEM.ALU_OUT = op1 != op2;
-                if (nobp_set || !CURRENT_STATE.EX_MEM.ALU_OUT) {
+                if (nobp_set) {
                     pipe_branch_flush(2);
+                } else {
+                    CURRENT_STATE.PC = CURRENT_STATE.ID_EX.NPC
+                        + (CURRENT_STATE.ID_EX.IMM << 2);
+                    pipe_jump_flush();
                 }
                 break;
             // ADDIU
@@ -562,9 +587,9 @@ void process_instruction(int num_cycles, int nobp_set, int data_fwd_set) {
     if (CURRENT_STATE.IF_stall) {
         CURRENT_STATE.PIPE[0] = CURRENT_STATE.PC;
     } else if (CURRENT_STATE.PIPE[0]) {
-        inst = get_inst_info(CURRENT_STATE.PC);
+        inst = get_inst_info(CURRENT_STATE.PIPE[0]);
         CURRENT_STATE.IF_ID.Instr = inst;
-        CURRENT_STATE.IF_ID.NPC = CURRENT_STATE.PC + BYTES_PER_WORD;
+        CURRENT_STATE.IF_ID.NPC = CURRENT_STATE.PIPE[0] + BYTES_PER_WORD;
         CURRENT_STATE.PC = new_pc;
     }
 

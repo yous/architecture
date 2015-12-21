@@ -65,6 +65,7 @@ typedef struct CPU_State_Struct {
     uint32_t REGS[MIPS_REGS];   /* register file */
     uint32_t PIPE[PIPE_STAGE];  /* pipeline stage */
 
+    unsigned char branch_predict_fail;
     unsigned char IF_stall;
 
     struct {
