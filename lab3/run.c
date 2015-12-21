@@ -492,11 +492,13 @@ void process_instruction(int num_cycles, int nobp_set, int data_fwd_set) {
                 break;
             // (0x100011) LW
             case 0x23:
+                CURRENT_STATE.ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
                 // 000001 010 11
                 CURRENT_STATE.ID_EX.CONTROL = 0x2B;
                 break;
             // (0x101011) SW
             case 0x2B:
+                CURRENT_STATE.ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
                 // x00001 001 0x
                 CURRENT_STATE.ID_EX.CONTROL = 0x24;
                 break;
