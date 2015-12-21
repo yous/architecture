@@ -461,13 +461,13 @@ void process_instruction(int nobp_set, int data_fwd_set) {
         switch (OPCODE(inst)) {
             // (0x000100) BEQ
             case 0x4:
-                if (!nobp_set) {
+                if (nobp_set) {
                     CURRENT_STATE.IF_stalls = 3;
                 }
                 break;
             // (0x000101) BNE
             case 0x5:
-                if (!nobp_set) {
+                if (nobp_set) {
                     CURRENT_STATE.IF_stalls = 3;
                 }
                 break;
