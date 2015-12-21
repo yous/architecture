@@ -234,8 +234,6 @@ void process_instruction(int nobp_set, int data_fwd_set) {
             // BNE
             case 3:
                 CURRENT_STATE.EX_MEM.ALU_OUT = op1 != op2;
-                CURRENT_STATE.EX_MEM.BR_TARGET =
-                    CURRENT_STATE.ID_EX.NPC + (CURRENT_STATE.ID_EX.IMM << 2);
                 break;
             // ADDIU
             case 4:
