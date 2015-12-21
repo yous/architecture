@@ -180,6 +180,8 @@ int main(int argc, char *argv[]) {
             }
         }
     } else if (pipe_dump_set) {
+        printf("Simulating for %d cycles...\n\n", i);
+
         for (; i > 0; i--) {
             if (RUN_BIT == FALSE) {
                 printf("Simulator halted\n\n");
@@ -188,10 +190,12 @@ int main(int argc, char *argv[]) {
             cycle(nobp_set, data_fwd_set);
 
             pdump();
-            if (mem_dump_set) {
-                mdump(addr1, addr2);
-            }
         }
+        rdump();
+        if (mem_dump_set) {
+            mdump(addr1, addr2);
+        }
+        printf("Simulator halted\n\n");
     } else {
         run(i, nobp_set, data_fwd_set);
         rdump();
