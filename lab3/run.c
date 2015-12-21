@@ -46,13 +46,15 @@ void process_instruction(int nobp_set, int data_fwd_set) {
         CURRENT_STATE.MEM_WB.stalls--;
     } else {
         unsigned char control = CURRENT_STATE.MEM_WB.CONTROL;
+        // RegWrite
         if (control & 0x2) {
+            // MemToReg
             if (control & 0x1) {
                 CURRENT_STATE.REGS[CURRENT_STATE.MEM_WB.WRITE_REG] =
-                    CURRENT_STATE.MEM_WB.ALU_OUT;
+                    CURRENT_STATE.MEM_WB.MEM_OUT;
             } else {
                 CURRENT_STATE.REGS[CURRENT_STATE.MEM_WB.WRITE_REG] =
-                    CURRENT_STATE.MEM_WB.MEM_OUT;
+                    CURRENT_STATE.MEM_WB.ALU_OUT;
             }
         }
     }
@@ -377,28 +379,28 @@ void process_instruction(int nobp_set, int data_fwd_set) {
         switch (OPCODE(inst)) {
             // (0x001001) ADDIU
             case 0x9:
-                // 001001 000 11
-                CURRENT_STATE.ID_EX.CONTROL = 0x123;
+                // 001001 000 10
+                CURRENT_STATE.ID_EX.CONTROL = 0x122;
                 break;
             // (0x001100) ANDI
             case 0xC:
-                // 001011 000 11
-                CURRENT_STATE.ID_EX.CONTROL = 0x163;
+                // 001011 000 10
+                CURRENT_STATE.ID_EX.CONTROL = 0x162;
                 break;
             // (0x001111) LUI
             case 0xF:
-                // 001101 000 11
-                CURRENT_STATE.ID_EX.CONTROL = 0x1A3;
+                // 001101 000 10
+                CURRENT_STATE.ID_EX.CONTROL = 0x1A2;
                 break;
             // (0x001101) ORI
             case 0xD:
-                // 001111 000 11
-                CURRENT_STATE.ID_EX.CONTROL = 0x1E3;
+                // 001111 000 10
+                CURRENT_STATE.ID_EX.CONTROL = 0x1E2;
                 break;
             // (0x001011) SLTIU
             case 0xB:
-                // 010001 000 11
-                CURRENT_STATE.ID_EX.CONTROL = 0x223;
+                // 010001 000 10
+                CURRENT_STATE.ID_EX.CONTROL = 0x222;
                 break;
             // (0x100011) LW
             case 0x23:
