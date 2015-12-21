@@ -282,6 +282,8 @@ void process_instruction(int nobp_set, int data_fwd_set) {
                 case 0x9:
                 // (0x001100) ANDI
                 case 0xC:
+                // (0x001111) LUI
+                case 0xF:
                 // (0x001101) ORI
                 case 0xD:
                 // (0x001011) SLTIU
