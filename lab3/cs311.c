@@ -75,11 +75,8 @@ void load_program(char *program_filename) {
         flag++;
     }
     CURRENT_STATE.PC = MEM_TEXT_START;
-    CURRENT_STATE.IF_stalls = 0;
-    CURRENT_STATE.IF_ID.valid = FALSE;
-    CURRENT_STATE.ID_EX.CONTROL = 0;
-    CURRENT_STATE.EX_MEM.CONTROL = 0;
-    CURRENT_STATE.MEM_WB.CONTROL = 0;
+    CURRENT_STATE.IF_stall = FALSE;
+    CURRENT_STATE.IF_ID.stall = FALSE;
     // printf("Read %d words from program into memory.\n\n", ii / 4);
 }
 
@@ -162,32 +159,25 @@ int main(int argc, char *argv[]) {
     }
 
     if (debug_set) {
-        printf("Simulating for %d cycles...\n\n", i);
+        printf("Simulating for %d insturctions...\n\n", i);
 
-        for (; i > 0; i--) {
-            if (RUN_BIT == FALSE) {
-                printf("Simulator halted\n\n");
-                break;
-            }
-            cycle(nobp_set, data_fwd_set);
+        while (RUN_BIT) {
+            cycle(i, nobp_set, data_fwd_set);
 
             if (pipe_dump_set) {
                 pdump();
             }
             rdump();
-            if (mem_dump_set) {
-                mdump(addr1, addr2);
-            }
         }
+        if (mem_dump_set) {
+            mdump(addr1, addr2);
+        }
+        printf("Simulator halted\n\n");
     } else if (pipe_dump_set) {
-        printf("Simulating for %d cycles...\n\n", i);
+        printf("Simulating for %d instructions...\n\n", i);
 
-        for (; i > 0; i--) {
-            if (RUN_BIT == FALSE) {
-                printf("Simulator halted\n\n");
-                break;
-            }
-            cycle(nobp_set, data_fwd_set);
+        while (RUN_BIT) {
+            cycle(i, nobp_set, data_fwd_set);
 
             pdump();
         }

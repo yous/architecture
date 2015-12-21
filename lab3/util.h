@@ -65,13 +65,12 @@ typedef struct CPU_State_Struct {
     uint32_t REGS[MIPS_REGS];   /* register file */
     uint32_t PIPE[PIPE_STAGE];  /* pipeline stage */
 
-    unsigned char IF_stalls;
+    unsigned char IF_stall;
 
     struct {
-        unsigned char valid;
         instruction *Instr;
         uint32_t NPC;
-        unsigned char stalls;
+        unsigned char stall;
     } IF_ID;
 
     struct {
@@ -84,7 +83,6 @@ typedef struct CPU_State_Struct {
         short RT;
         short RD;
         uint16_t CONTROL;
-        unsigned char stalls;
     } ID_EX;
 
     struct {
@@ -93,7 +91,6 @@ typedef struct CPU_State_Struct {
         uint32_t WRITE_DATA;
         short WRITE_REG;
         unsigned char CONTROL;
-        unsigned char stalls;
     } EX_MEM;
 
     struct {
@@ -101,7 +98,6 @@ typedef struct CPU_State_Struct {
         uint32_t MEM_OUT;
         short WRITE_REG;
         unsigned char CONTROL;
-        unsigned char stalls;
     } MEM_WB;
 } CPU_State;
 
@@ -123,15 +119,17 @@ extern mem_region_t MEM_REGIONS[2];
 /* For Execution */
 extern int RUN_BIT;     /* run bit */
 extern int INSTRUCTION_COUNT;
+extern int FINISHED_INSTRUCTION_COUNT;
+extern int FETCH_FINISHED;
 
 /* Functions */
 char **str_split(char *a_str, const char a_delim);
 int fromBinary(char *s);
 uint32_t mem_read_32(uint32_t address);
 void mem_write_32(uint32_t address, uint32_t value);
-void cycle(int nobp_set, int data_fwd_set);
+void cycle(int num_cycles, int nobp_set, int data_fwd_set);
 void run(int num_cycles, int nobp_set, int data_fwd_set);
-void go(int nobp_set, int data_fwd_set);
+void go(int num_cycles, int nobp_set, int data_fwd_set);
 void mdump(int start, int stop);
 void rdump();
 void pdump();

@@ -27,6 +27,8 @@ mem_region_t MEM_REGIONS[] = {
 CPU_State CURRENT_STATE;
 int RUN_BIT;            /* run bit */
 int INSTRUCTION_COUNT;
+int FINISHED_INSTRUCTION_COUNT;
+int FETCH_FINISHED;
 
 /***************************************************************/
 /* CPU State info.                                             */
@@ -167,8 +169,8 @@ void mem_write_32(uint32_t address, uint32_t value) {
 /* Purpose   : Execute a cycle                                 */
 /*                                                             */
 /***************************************************************/
-void cycle(int nobp_set, int data_fwd_set) {
-    process_instruction(nobp_set, data_fwd_set);
+void cycle(int num_cycles, int nobp_set, int data_fwd_set) {
+    process_instruction(num_cycles, nobp_set, data_fwd_set);
     INSTRUCTION_COUNT++;
 }
 
@@ -187,14 +189,11 @@ void run(int num_cycles, int nobp_set, int data_fwd_set) {
         return;
     }
 
-    printf("Simulating for %d cycles...\n\n", num_cycles);
-    for (i = 0; i < num_cycles; i++) {
-        if (RUN_BIT == FALSE) {
-            printf("Simulator halted\n\n");
-            break;
-        }
-        cycle(nobp_set, data_fwd_set);
+    printf("Simulating for %d instructions...\n\n", num_cycles);
+    while (RUN_BIT) {
+        cycle(num_cycles, nobp_set, data_fwd_set);
     }
+    printf("Simulator halted\n\n");
 }
 
 /***************************************************************/
@@ -204,7 +203,7 @@ void run(int num_cycles, int nobp_set, int data_fwd_set) {
 /* Purpose   : Simulate MIPS until HALTed                      */
 /*                                                             */
 /***************************************************************/
-void go(int nobp_set, int data_fwd_set) {
+void go(int num_cycles, int nobp_set, int data_fwd_set) {
     if (RUN_BIT == FALSE) {
         printf("Can't simulate, Simulator is halted\n\n");
         return;
@@ -212,7 +211,7 @@ void go(int nobp_set, int data_fwd_set) {
 
     printf("Simulating...\n\n");
     while (RUN_BIT) {
-        cycle(nobp_set, data_fwd_set);
+        cycle(num_cycles, nobp_set, data_fwd_set);
     }
     printf("Simulator halted\n\n");
 }
