@@ -172,7 +172,7 @@ void process_instruction(int nobp_set, int data_fwd_set) {
         }
 
         // RegDst
-        if (control & 0x100) {
+        if (control & 0x400) {
             write_reg = CURRENT_STATE.ID_EX.RD;
         } else {
             write_reg = CURRENT_STATE.ID_EX.RT;
