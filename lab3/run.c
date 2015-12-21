@@ -199,8 +199,7 @@ void process_instruction(int nobp_set, int data_fwd_set) {
                 break;
             // R
             case 2:
-                // FUNC
-                switch (CURRENT_STATE.ID_EX.IMM) {
+                switch (CURRENT_STATE.ID_EX.FUNC) {
                     // ADDU
                     case 0x21:
                         CURRENT_STATE.EX_MEM.ALU_OUT = op1 + op2;
@@ -223,10 +222,12 @@ void process_instruction(int nobp_set, int data_fwd_set) {
                         break;
                     // SLL
                     case 0x0:
+                        op2 = CURRENT_STATE.ID_EX.IMM;
                         CURRENT_STATE.EX_MEM.ALU_OUT = op1 << op2;
                         break;
                     // SRL
                     case 0x2:
+                        op2 = CURRENT_STATE.ID_EX.IMM;
                         CURRENT_STATE.EX_MEM.ALU_OUT = op1 >> op2;
                         break;
                     // SUBU
@@ -447,6 +448,10 @@ void process_instruction(int nobp_set, int data_fwd_set) {
                     // SRL
                     case 0x2:
                         CURRENT_STATE.ID_EX.REG1 = CURRENT_STATE.REGS[RT(inst)];
+                        CURRENT_STATE.ID_EX.IMM = SHAMT(inst);
+                        CURRENT_STATE.ID_EX.FUNC = FUNC(inst);
+                        // 100100 000 10
+                        CURRENT_STATE.ID_EX.CONTROL = 0x482;
                         break;
                     // JR
                     case 0x8:
@@ -455,7 +460,7 @@ void process_instruction(int nobp_set, int data_fwd_set) {
                         break;
                     default:
                         CURRENT_STATE.ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
-                        CURRENT_STATE.ID_EX.IMM = FUNC(inst);
+                        CURRENT_STATE.ID_EX.FUNC = FUNC(inst);
                         // 100100 000 10
                         CURRENT_STATE.ID_EX.CONTROL = 0x482;
                         break;

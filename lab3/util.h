@@ -79,6 +79,7 @@ typedef struct CPU_State_Struct {
         uint32_t REG1;
         uint32_t REG2;
         uint32_t IMM;
+        uint8_t FUNC;
         short RS;
         short RT;
         short RD;
