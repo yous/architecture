@@ -188,6 +188,12 @@ void process_instruction(int nobp_set, int data_fwd_set) {
             // BEQ
             case 1:
                 CURRENT_STATE.EX_MEM.ALU_OUT = op1 == op2;
+                if (!nobp_set && !CURRENT_STATE.EX_MEM.ALU_OUT) {
+                    new_pc = CURRENT_STATE.PIPE[2] + BYTES_PER_WORD;
+                    CURRENT_STATE.IF_ID.stalls = 3;
+                    CURRENT_STATE.ID_EX.stalls = 3;
+                    CURRENT_STATE.EX_MEM.stalls = 3;
+                }
                 break;
             // R
             case 2:
@@ -234,6 +240,12 @@ void process_instruction(int nobp_set, int data_fwd_set) {
             // BNE
             case 3:
                 CURRENT_STATE.EX_MEM.ALU_OUT = op1 != op2;
+                if (!nobp_set && !CURRENT_STATE.EX_MEM.ALU_OUT) {
+                    new_pc = CURRENT_STATE.PIPE[2] + BYTES_PER_WORD;
+                    CURRENT_STATE.IF_ID.stalls = 3;
+                    CURRENT_STATE.ID_EX.stalls = 3;
+                    CURRENT_STATE.EX_MEM.stalls = 3;
+                }
                 break;
             // ADDIU
             case 4:
@@ -400,11 +412,17 @@ void process_instruction(int nobp_set, int data_fwd_set) {
                 break;
             // (0x000100) BEQ
             case 0x4:
+                if (!nobp_set) {
+                    new_pc = CURRENT_STATE.IF_ID.NPC + (IMM(inst) << 2);
+                }
                 // x00010 100 0x
                 CURRENT_STATE.ID_EX.CONTROL = 0x50;
                 break;
             // (0x000101) BNE
             case 0x5:
+                if (!nobp_set) {
+                    new_pc = CURRENT_STATE.IF_ID.NPC + (IMM(inst) << 2);
+                }
                 // x00110 100 0x
                 CURRENT_STATE.ID_EX.CONTROL = 0xD0;
                 break;
@@ -463,12 +481,16 @@ void process_instruction(int nobp_set, int data_fwd_set) {
             case 0x4:
                 if (nobp_set) {
                     CURRENT_STATE.IF_stalls = 3;
+                } else {
+                    CURRENT_STATE.IF_stalls = 1;
                 }
                 break;
             // (0x000101) BNE
             case 0x5:
                 if (nobp_set) {
                     CURRENT_STATE.IF_stalls = 3;
+                } else {
+                    CURRENT_STATE.IF_stalls = 1;
                 }
                 break;
             // (0x000010) J
