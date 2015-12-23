@@ -23,14 +23,9 @@ instruction *get_inst_info(uint32_t pc) {
     return &INST_INFO[(pc - MEM_TEXT_START) >> 2];
 }
 
-void pipe_stall(CPU_State *state, int stage) {
+void pipe_stall(CPU_State *state) {
     state->IF_stall = TRUE;
     state->IF_ID.stall = TRUE;
-}
-
-void pipe_branch_predict(CPU_State *state, uint32_t pc) {
-    state->PC = pc;
-    state->flush[1] = TRUE;
 }
 
 void pipe_branch_flush(CPU_State *state, int stage) {
@@ -81,7 +76,7 @@ void process_ID(CPU_State *state, int nobp_set) {
     state->ID_EX.RD = RD(inst);
 
     state->ID_EX.REG1 = CURRENT_STATE.REGS[RS(inst)];
-    state->ID_EX.REG2 = 0;
+    state->ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
     state->ID_EX.IMM = (int32_t) IMM(inst);
 
     switch (OPCODE(inst)) {
@@ -112,21 +107,16 @@ void process_ID(CPU_State *state, int nobp_set) {
             break;
         // (0x100011) LW
         case 0x23:
-            state->ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
             // 000001 010 11
             state->ID_EX.CONTROL = 0x2B;
             break;
         // (0x101011) SW
         case 0x2B:
-            state->ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
             // x00001 001 0x
             state->ID_EX.CONTROL = 0x24;
             break;
         // (0x000100) BEQ
         case 0x4:
-            state->ID_EX.REG1 = CURRENT_STATE.REGS[RS(inst)];
-            state->ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
-
             if (nobp_set) {
                 pipe_branch_flush(state, 1);
             } else {
@@ -141,8 +131,6 @@ void process_ID(CPU_State *state, int nobp_set) {
             break;
         // (0x000101) BNE
         case 0x5:
-            state->ID_EX.REG1 = CURRENT_STATE.REGS[RS(inst)];
-            state->ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
             if (nobp_set) {
                 pipe_branch_flush(state, 1);
             } else {
@@ -182,7 +170,6 @@ void process_ID(CPU_State *state, int nobp_set) {
                 case 0x0:
                 // SRL
                 case 0x2:
-                    state->ID_EX.REG1 = CURRENT_STATE.REGS[RT(inst)];
                     state->ID_EX.IMM = SHAMT(inst);
                     state->ID_EX.FUNC = FUNC(inst);
                     // 100100 000 10
@@ -198,7 +185,6 @@ void process_ID(CPU_State *state, int nobp_set) {
                     state->ID_EX.CONTROL = 0;
                     break;
                 default:
-                    state->ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
                     state->ID_EX.FUNC = FUNC(inst);
                     // 100100 000 10
                     state->ID_EX.CONTROL = 0x482;
@@ -214,6 +200,9 @@ void process_ID(CPU_State *state, int nobp_set) {
 
 void process_EX(CPU_State *state, int nobp_set, int data_fwd_set) {
     uint16_t control;
+    uint32_t reg1;
+    uint32_t reg2;
+    uint32_t imm;
     uint32_t op1;
     uint32_t op2;
     short write_reg;
@@ -225,72 +214,53 @@ void process_EX(CPU_State *state, int nobp_set, int data_fwd_set) {
     }
 
     control = CURRENT_STATE.ID_EX.CONTROL;
-    op1 = CURRENT_STATE.ID_EX.REG1;
+    reg1 = CURRENT_STATE.ID_EX.REG1;
+    reg2 = CURRENT_STATE.ID_EX.REG2;
+    imm = CURRENT_STATE.ID_EX.IMM;
     state->EX_MEM.CONTROL = control & 0x1F;
     state->EX_MEM.WRITE_DATA = CURRENT_STATE.ID_EX.REG2;
 
-    // ALUSrc
-    if (control & 0x20) {
-        op2 = (int32_t) CURRENT_STATE.ID_EX.IMM;
-    } else {
-        op2 = CURRENT_STATE.ID_EX.REG2;
-    }
-
     if (data_fwd_set) {
-        // MEM_WB RegWrite
-        if (CURRENT_STATE.MEM_WB.CONTROL & 0x2) {
+        // MEM_WB
+        write_reg = CURRENT_STATE.MEM_WB.WRITE_REG;
+        // RegWrite
+        if (CURRENT_STATE.MEM_WB.CONTROL & 0x2 && write_reg) {
             // MemToReg
             if (CURRENT_STATE.MEM_WB.CONTROL & 0x1) {
                 forward_data = CURRENT_STATE.MEM_WB.MEM_OUT;
             } else {
                 forward_data = CURRENT_STATE.MEM_WB.ALU_OUT;
             }
-
-            // ALUSrc
-            if (!(control & 0x20)) {
-                if (CURRENT_STATE.ID_EX.RT == CURRENT_STATE.MEM_WB.WRITE_REG) {
-                    op2 = forward_data;
-                }
+            if (write_reg == CURRENT_STATE.ID_EX.RS) {
+                reg1 = forward_data;
             }
-            // R
-            if ((control >> 6) & 0xF == 2) {
-                // SLL, SRL
-                if (CURRENT_STATE.ID_EX.FUNC == 0x0
-                        || CURRENT_STATE.ID_EX.FUNC == 0x2) {
-                    op1 = forward_data;
-                }
-            } else if ((control >> 6) & 0xF != 6) {
-                // Not LUI
-                if (CURRENT_STATE.ID_EX.RS == CURRENT_STATE.MEM_WB.WRITE_REG) {
-                    op1 = forward_data;
-                }
+            if (write_reg == CURRENT_STATE.ID_EX.RT) {
+                reg2 = forward_data;
             }
         }
 
-        // EX_MEM RegWrite
-        if (CURRENT_STATE.EX_MEM.CONTROL & 0x2) {
-            forward_data = CURRENT_STATE.EX_MEM.ALU_OUT;
-
-            // ALUSrc
-            if (!(control & 0x20)) {
-                if (CURRENT_STATE.ID_EX.RT == CURRENT_STATE.EX_MEM.WRITE_REG) {
-                    op2 = forward_data;
+        // EX_MEM
+        write_reg = CURRENT_STATE.EX_MEM.WRITE_REG;
+        // RegWrite
+        if (CURRENT_STATE.EX_MEM.CONTROL & 0x2 && write_reg) {
+            if (!(CURRENT_STATE.EX_MEM.CONTROL & 0x1)) {
+                forward_data = CURRENT_STATE.EX_MEM.ALU_OUT;
+                if (write_reg == CURRENT_STATE.ID_EX.RS) {
+                    reg1 = forward_data;
                 }
-            }
-            // R
-            if ((control >> 6) & 0xF == 2) {
-                // SLL, SRL
-                if (CURRENT_STATE.ID_EX.FUNC == 0x0
-                        || CURRENT_STATE.ID_EX.FUNC == 0x2) {
-                    op1 = forward_data;
-                }
-            } else if ((control >> 6) & 0xF != 6) {
-                // Not LUI
-                if (CURRENT_STATE.ID_EX.RS == CURRENT_STATE.EX_MEM.WRITE_REG) {
-                    op1 = forward_data;
+                if (write_reg == CURRENT_STATE.ID_EX.RT) {
+                    reg2 = forward_data;
                 }
             }
         }
+    }
+
+    // ALUSrc
+    op1 = reg1;
+    if (control & 0x20) {
+        op2 = imm;
+    } else {
+        op2 = reg2;
     }
 
     // RegDst
@@ -311,7 +281,7 @@ void process_EX(CPU_State *state, int nobp_set, int data_fwd_set) {
         case 1:
             state->EX_MEM.ALU_OUT = op1 == op2;
             if (nobp_set) {
-                pipe_stall(state, 2);
+                pipe_stall(state);
             }
             break;
         // R
@@ -339,13 +309,11 @@ void process_EX(CPU_State *state, int nobp_set, int data_fwd_set) {
                     break;
                 // SLL
                 case 0x0:
-                    op2 = CURRENT_STATE.ID_EX.IMM;
-                    state->EX_MEM.ALU_OUT = op1 << op2;
+                    state->EX_MEM.ALU_OUT = op2 << imm;
                     break;
                 // SRL
                 case 0x2:
-                    op2 = CURRENT_STATE.ID_EX.IMM;
-                    state->EX_MEM.ALU_OUT = op1 >> op2;
+                    state->EX_MEM.ALU_OUT = op2 >> imm;
                     break;
                 // SUBU
                 case 0x23:
@@ -361,7 +329,7 @@ void process_EX(CPU_State *state, int nobp_set, int data_fwd_set) {
         case 3:
             state->EX_MEM.ALU_OUT = op1 != op2;
             if (nobp_set) {
-                pipe_stall(state, 2);
+                pipe_stall(state);
             }
             break;
         // ADDIU
@@ -649,6 +617,12 @@ void update_latch(CPU_State *state) {
         CURRENT_STATE.PIPE[i] = state->PIPE[i];
     }
 
+    if (state->flush[2]) {
+        CURRENT_STATE.EX_MEM.WRITE_REG = 0;
+    }
+    if (state->flush[3]) {
+        CURRENT_STATE.MEM_WB.WRITE_REG = 0;
+    }
     for (i = 0; i < PIPE_STAGE; i++) {
         if (state->flush[i]) {
             CURRENT_STATE.PIPE[i] = 0;
