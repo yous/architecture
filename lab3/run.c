@@ -129,6 +129,12 @@ void process_ID(CPU_State *state, int nobp_set) {
 
             if (nobp_set) {
                 pipe_branch_flush(state, 1);
+            } else {
+                if (!state->update_pc) {
+                    state->update_pc = TRUE;
+                    state->PC = CURRENT_STATE.IF_ID.NPC + (IMM(inst) << 2);
+                }
+                pipe_jump_flush(state);
             }
             // x00010 100 0x
             state->ID_EX.CONTROL = 0x50;
@@ -139,6 +145,12 @@ void process_ID(CPU_State *state, int nobp_set) {
             state->ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
             if (nobp_set) {
                 pipe_branch_flush(state, 1);
+            } else {
+                if (!state->update_pc) {
+                    state->update_pc = TRUE;
+                    state->PC = CURRENT_STATE.IF_ID.NPC + (IMM(inst) << 2);
+                }
+                pipe_jump_flush(state);
             }
             // x00110 100 0x
             state->ID_EX.CONTROL = 0xD0;
@@ -300,10 +312,6 @@ void process_EX(CPU_State *state, int nobp_set, int data_fwd_set) {
             state->EX_MEM.ALU_OUT = op1 == op2;
             if (nobp_set) {
                 pipe_stall(state, 2);
-            } else {
-                state->PC = CURRENT_STATE.ID_EX.NPC
-                    + (CURRENT_STATE.ID_EX.IMM << 2);
-                pipe_jump_flush(state);
             }
             break;
         // R
@@ -354,10 +362,6 @@ void process_EX(CPU_State *state, int nobp_set, int data_fwd_set) {
             state->EX_MEM.ALU_OUT = op1 != op2;
             if (nobp_set) {
                 pipe_stall(state, 2);
-            } else {
-                state->PC = CURRENT_STATE.ID_EX.NPC
-                    + (CURRENT_STATE.ID_EX.IMM << 2);
-                pipe_jump_flush(state);
             }
             break;
         // ADDIU
@@ -477,18 +481,19 @@ void process_MEM(CPU_State *state, int nobp_set, int data_fwd_set) {
     // Branch
     if (control & 0x10) {
         if (nobp_set) {
-            state->PC = CURRENT_STATE.PIPE[3] + BYTES_PER_WORD;
+            if (CURRENT_STATE.EX_MEM.ALU_OUT) {
+                state->PC = CURRENT_STATE.EX_MEM.BR_TARGET;
+            } else {
+                state->PC = CURRENT_STATE.PIPE[3] + BYTES_PER_WORD;
+            }
             state->update_pc = TRUE;
-        } else if (!CURRENT_STATE.EX_MEM.ALU_OUT) {
-            state->PIPE[0] = CURRENT_STATE.PIPE[4] + BYTES_PER_WORD;
-            state->PC = state->PIPE[0];
-            state->flush[1] = TRUE;
-            state->flush[2] = TRUE;
-            state->flush[3] = TRUE;
-        }
-        if (CURRENT_STATE.EX_MEM.ALU_OUT) {
-            state->PC = CURRENT_STATE.EX_MEM.BR_TARGET;
-            state->update_pc = TRUE;
+        } else {
+            if (!CURRENT_STATE.EX_MEM.ALU_OUT) {
+                state->PC = CURRENT_STATE.PIPE[3] + BYTES_PER_WORD;
+                state->update_pc = TRUE;
+                state->flush[1] = TRUE;
+                state->flush[2] = TRUE;
+            }
         }
     }
 
