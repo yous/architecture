@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
 
     /* Error Checking */
     if (argc < 2) {
-        printf("Error: usage: %s [-nobp] [-f] [-m addr1:addr2] [-d] [-p] [-n num_instr] inputBinary\n", argv[0]);
+        printf("Usage: %s [-nobp] [-f] [-m addr1:addr2] [-d] [-p] [-n num_instr] inputBinary\n", argv[0]);
         exit(1);
     }
 
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[count], "-p") == 0) {
             pipe_dump_set = 1;
         } else {
-            printf("Error: usage: %s [-nobp] [-f] [-m addr1:addr2] [-d] [-p] [-n num_instr] inputBinary\n", argv[0]);
+            printf("Usage: %s [-nobp] [-f] [-m addr1:addr2] [-d] [-p] [-n num_instr] inputBinary\n", argv[0]);
             // You must add nobp and f option yourself
             exit(1);
         }
