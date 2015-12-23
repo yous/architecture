@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
         }
         printf("Simulator halted\n\n");
     } else if (pipe_dump_set) {
-        printf("Simulating for %d instructions...\n\n", i);
+        printf("Simulating for %d insturctions...\n\n", i);
 
         while (RUN_BIT) {
             cycle(i, nobp_set, data_fwd_set, pipe_dump_set);
