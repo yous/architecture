@@ -413,11 +413,15 @@ void process_EX(CPU_State *state, int nobp_set, int data_fwd_set) {
             case 0xD:
             // (0x001011) SLTIU
             case 0xB:
-            // (0x101011) SW
-            case 0x2B:
             // (0x100011) LW
             case 0x23:
                 if (write_reg == RS(inst)) {
+                    hazard = 1;
+                }
+                break;
+            // (0x101011) SW
+            case 0x2B:
+                if (write_reg == RT(inst)) {
                     hazard = 1;
                 }
                 break;
@@ -456,8 +460,8 @@ void process_EX(CPU_State *state, int nobp_set, int data_fwd_set) {
         }
         if (hazard) {
             // MemToReg
-            if (control & 0x1 || !data_fwd_set) {
-                pipe_stall(state, 2);
+            if ((control & 0x1 || !data_fwd_set) && CURRENT_STATE.PIPE[1]) {
+                pipe_stall(state);
             }
         }
     }
@@ -524,11 +528,15 @@ void process_MEM(CPU_State *state, int nobp_set, int data_fwd_set) {
             case 0xD:
             // (0x001011) SLTIU
             case 0xB:
-            // (0x101011) SW
-            case 0x2B:
             // (0x100011) LW
             case 0x23:
                 if (write_reg == RS(inst)) {
+                    hazard = 1;
+                }
+                break;
+            // (0x101011) SW
+            case 0x2B:
+                if (write_reg == RT(inst)) {
                     hazard = 1;
                 }
                 break;
@@ -566,9 +574,8 @@ void process_MEM(CPU_State *state, int nobp_set, int data_fwd_set) {
                 break;
         }
         if (hazard) {
-            // MemToReg
-            if (control & 0x1 || !data_fwd_set) {
-                pipe_stall(state, 2);
+            if (!data_fwd_set && CURRENT_STATE.PIPE[1]) {
+                pipe_stall(state);
             }
         }
     }
