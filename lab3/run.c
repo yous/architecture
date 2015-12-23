@@ -145,14 +145,20 @@ void process_ID(CPU_State *state, int nobp_set) {
             break;
         // (0x000010) J
         case 0x2:
-            CURRENT_STATE.PC = (TARGET(inst) << 2) - BYTES_PER_WORD;
+            if (!state->update_pc) {
+                state->update_pc = TRUE;
+                state->PC = TARGET(inst) << 2;
+            }
             pipe_jump_flush(state);
             // x10011 000 0x
             state->ID_EX.CONTROL = 0x260;
             break;
         // (0x000011) JAL
         case 0x3:
-            CURRENT_STATE.PC = (TARGET(inst) << 2) - BYTES_PER_WORD;
+            if (!state->update_pc) {
+                state->update_pc = TRUE;
+                state->PC = TARGET(inst) << 2;
+            }
             pipe_jump_flush(state);
             // x10101 000 10
             state->ID_EX.CONTROL = 0x2A2;
@@ -172,7 +178,10 @@ void process_ID(CPU_State *state, int nobp_set) {
                     break;
                 // JR
                 case 0x8:
-                    CURRENT_STATE.PC = CURRENT_STATE.REGS[RS(inst)] - BYTES_PER_WORD;
+                    if (!state->update_pc) {
+                        state->update_pc = TRUE;
+                        state->PC = CURRENT_STATE.REGS[RS(inst)];
+                    }
                     pipe_jump_flush(state);
                     state->ID_EX.CONTROL = 0;
                     break;
