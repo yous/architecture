@@ -77,46 +77,53 @@ void process_ID(CPU_State *state, int nobp_set) {
 
     state->ID_EX.REG1 = CURRENT_STATE.REGS[RS(inst)];
     state->ID_EX.REG2 = CURRENT_STATE.REGS[RT(inst)];
-    state->ID_EX.IMM = (int32_t) IMM(inst);
 
     switch (OPCODE(inst)) {
         // (0x001001) ADDIU
         case 0x9:
+            state->ID_EX.IMM = (int32_t) IMM(inst);
             // 001001 000 10
             state->ID_EX.CONTROL = 0x122;
             break;
         // (0x001100) ANDI
         case 0xC:
+            state->ID_EX.IMM = (uint32_t) (unsigned short) IMM(inst);
             // 001011 000 10
             state->ID_EX.CONTROL = 0x162;
             break;
         // (0x001111) LUI
         case 0xF:
+            state->ID_EX.IMM = IMM(inst);
             // 001101 000 10
             state->ID_EX.CONTROL = 0x1A2;
             break;
         // (0x001101) ORI
         case 0xD:
+            state->ID_EX.IMM = (uint32_t) (unsigned short) IMM(inst);
             // 001111 000 10
             state->ID_EX.CONTROL = 0x1E2;
             break;
         // (0x001011) SLTIU
         case 0xB:
+            state->ID_EX.IMM = (int32_t) IMM(inst);
             // 010001 000 10
             state->ID_EX.CONTROL = 0x222;
             break;
         // (0x100011) LW
         case 0x23:
+            state->ID_EX.IMM = (int32_t) IMM(inst);
             // 000001 010 11
             state->ID_EX.CONTROL = 0x2B;
             break;
         // (0x101011) SW
         case 0x2B:
+            state->ID_EX.IMM = (int32_t) IMM(inst);
             // x00001 001 0x
             state->ID_EX.CONTROL = 0x24;
             break;
         // (0x000100) BEQ
         case 0x4:
+            state->ID_EX.IMM = (int32_t) IMM(inst);
             if (nobp_set) {
                 pipe_branch_flush(state, 1);
             } else {
@@ -131,6 +138,7 @@ void process_ID(CPU_State *state, int nobp_set) {
             break;
         // (0x000101) BNE
         case 0x5:
+            state->ID_EX.IMM = (int32_t) IMM(inst);
             if (nobp_set) {
                 pipe_branch_flush(state, 1);
             } else {
@@ -350,7 +358,7 @@ void process_EX(CPU_State *state, int nobp_set, int data_fwd_set) {
             break;
         // SLTIU
         case 8:
-            state->EX_MEM.ALU_OUT = op1 < op2 ? 1 : 0;
+            state->EX_MEM.ALU_OUT = op1 < (uint32_t) op2 ? 1 : 0;
             break;
         // J
         case 9:
