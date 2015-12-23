@@ -656,7 +656,8 @@ void update_latch(CPU_State *state) {
 /* Purpose: Process one instrction                             */
 /*                                                             */
 /***************************************************************/
-void process_instruction(int num_cycles, int nobp_set, int data_fwd_set) {
+void process_instruction(int num_cycles, int nobp_set, int data_fwd_set,
+        int pipe_dump_set) {
     CPU_State next_state = {0};
     int i;              // for loop
 
@@ -665,6 +666,10 @@ void process_instruction(int num_cycles, int nobp_set, int data_fwd_set) {
     process_EX(&next_state, nobp_set, data_fwd_set);
     process_ID(&next_state, nobp_set);
     process_IF(&next_state);
+
+    if (pipe_dump_set) {
+        pdump();
+    }
 
     update_latch(&next_state);
 

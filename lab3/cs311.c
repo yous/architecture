@@ -163,10 +163,7 @@ int main(int argc, char *argv[]) {
         printf("Simulating for %d insturctions...\n\n", i);
 
         while (RUN_BIT) {
-            if (pipe_dump_set) {
-                pdump();
-            }
-            cycle(i, nobp_set, data_fwd_set);
+            cycle(i, nobp_set, data_fwd_set, pipe_dump_set);
             rdump();
         }
         if (mem_dump_set) {
@@ -177,8 +174,7 @@ int main(int argc, char *argv[]) {
         printf("Simulating for %d instructions...\n\n", i);
 
         while (RUN_BIT) {
-            pdump();
-            cycle(i, nobp_set, data_fwd_set);
+            cycle(i, nobp_set, data_fwd_set, pipe_dump_set);
         }
         rdump();
         if (mem_dump_set) {
@@ -186,7 +182,7 @@ int main(int argc, char *argv[]) {
         }
         printf("Simulator halted\n\n");
     } else {
-        run(i, nobp_set, data_fwd_set);
+        run(i, nobp_set, data_fwd_set, pipe_dump_set);
         rdump();
 
         if (mem_dump_set) {
