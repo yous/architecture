@@ -65,7 +65,8 @@ typedef struct CPU_State_Struct {
     uint32_t REGS[MIPS_REGS];   /* register file */
     uint32_t PIPE[PIPE_STAGE];  /* pipeline stage */
 
-    unsigned char branch_predict_fail;
+    unsigned char update_pc;
+    unsigned char flush[PIPE_STAGE];
     unsigned char IF_stall;
 
     struct {
@@ -121,7 +122,6 @@ extern mem_region_t MEM_REGIONS[2];
 extern int RUN_BIT;     /* run bit */
 extern int INSTRUCTION_COUNT;
 extern int FINISHED_INSTRUCTION_COUNT;
-extern int FETCH_FINISHED;
 
 /* Functions */
 char **str_split(char *a_str, const char a_delim);

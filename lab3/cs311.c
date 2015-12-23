@@ -75,6 +75,7 @@ void load_program(char *program_filename) {
         flag++;
     }
     CURRENT_STATE.PC = MEM_TEXT_START;
+    CURRENT_STATE.PIPE[0] = CURRENT_STATE.PC;
     CURRENT_STATE.IF_stall = FALSE;
     CURRENT_STATE.IF_ID.stall = FALSE;
     // printf("Read %d words from program into memory.\n\n", ii / 4);
@@ -162,11 +163,10 @@ int main(int argc, char *argv[]) {
         printf("Simulating for %d insturctions...\n\n", i);
 
         while (RUN_BIT) {
-            cycle(i, nobp_set, data_fwd_set);
-
             if (pipe_dump_set) {
                 pdump();
             }
+            cycle(i, nobp_set, data_fwd_set);
             rdump();
         }
         if (mem_dump_set) {
@@ -177,9 +177,8 @@ int main(int argc, char *argv[]) {
         printf("Simulating for %d instructions...\n\n", i);
 
         while (RUN_BIT) {
-            cycle(i, nobp_set, data_fwd_set);
-
             pdump();
+            cycle(i, nobp_set, data_fwd_set);
         }
         rdump();
         if (mem_dump_set) {

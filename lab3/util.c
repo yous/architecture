@@ -28,7 +28,6 @@ CPU_State CURRENT_STATE;
 int RUN_BIT;            /* run bit */
 int INSTRUCTION_COUNT;
 int FINISHED_INSTRUCTION_COUNT;
-int FETCH_FINISHED;
 
 /***************************************************************/
 /* CPU State info.                                             */
@@ -268,7 +267,7 @@ void pdump() {
 
     printf("Current pipeline PC state :\n");
     printf("-------------------------------------\n");
-    printf("CYCLE %d:", INSTRUCTION_COUNT);
+    printf("CYCLE %d:", INSTRUCTION_COUNT + 1);
     for (k = 0; k < 5; k++) {
         if (CURRENT_STATE.PIPE[k]) {
             printf("0x%08x", CURRENT_STATE.PIPE[k]);
