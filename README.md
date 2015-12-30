@@ -19,3 +19,21 @@ make
 ```
 
 Test with `./test.sh`.
+
+## Lab 3: Simulating Pipelined Execution
+
+```
+make
+./cs311sim [-nobp] [-f] [-m addr1:addr2] [-d] [-p] [-n num_instr] inputBinary
+```
+
+Test with `./test.sh`.
+
+## Lab 4: Cache Design for MIPS Architecture
+
+```
+gcc cache_output_format.c -o cs311cache
+./cs311cache [-c cap:assoc:bsize] [-x] input_trace
+```
+
+Test with `./test.sh`.
